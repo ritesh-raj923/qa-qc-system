@@ -1,0 +1,1871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QA/QC Inspection Suite</title>
+<style>
+:root {
+  --blue: #123a66;
+  --blue2: #0a2540;
+  --gold: #f2b441;
+  --line: #dbe4ee;
+  --soft: #e9eef5;
+  --bg: #f3f7fb;
+  --ok: #1f9d55;
+  --bad: #d64545;
+  --warn: #f0a202;
+  --muted: #5f6b7a;
+  --card: #ffffff;
+  --accent: #edf4ff;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; }
+body { background: linear-gradient(180deg, #f6f9fc 0%, #eef4fa 100%); color: #111; display: flex; min-height: 100vh; }
+
+.sidebar {
+  width: 250px;
+  background: linear-gradient(180deg, var(--blue2) 0%, var(--blue) 100%);
+  color: #fff;
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  padding: 18px 0;
+  overflow: auto;
+  box-shadow: 0 8px 24px rgba(0,0,0,.12);
+  z-index: 100;
+}
+.brand { padding: 0 18px 18px; border-bottom: 1px solid rgba(255,255,255,.15); }
+.brand h2 { font-size: 22px; margin-bottom: 4px; }
+.brand small { color: var(--gold); letter-spacing: 1px; text-transform: uppercase; }
+.menu-item {
+  padding: 12px 18px;
+  cursor: pointer;
+  font-weight: 700;
+  color: #d9e2ef;
+  border-left: 4px solid transparent;
+}
+.menu-item:hover, .menu-item.active {
+  background: rgba(255,255,255,.08);
+  color: #fff;
+  border-left-color: var(--gold);
+}
+.main { margin-left: 250px; width: calc(100% - 250px); padding: 24px; }
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 12px;
+  margin-bottom: 18px;
+  border-bottom: 2px solid var(--soft);
+  padding-bottom: 10px;
+}
+header h1 { font-size: 24px; color: var(--blue); }
+header .sub { font-size: 13px; color: #555; }
+.view { display: none; }
+.view.active { display: block; }
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.stat, .history-wrap, .sheet-shell, .card, .login-wrap, .panel {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 8px 22px rgba(18,58,102,.08);
+}
+.stat .label { font-size: 12px; text-transform: uppercase; color: #666; font-weight: 700; margin-bottom: 6px; }
+.stat .value { font-size: 30px; color: var(--blue); font-weight: 800; }
+.stat { position: relative; overflow: hidden; cursor: pointer; transition: .2s; }
+.stat:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(18,58,102,.14); }
+.stat:before { content: ''; position: absolute; inset: 0 0 auto 0; height: 4px; background: linear-gradient(90deg, var(--blue), var(--gold)); }
+.stat.active-kpi { border-color: var(--gold); box-shadow: 0 14px 30px rgba(18,58,102,.16); background: linear-gradient(180deg, #fff 0%, #f8fbff 100%); }
+.stat.active-kpi:before { height: 5px; background: linear-gradient(90deg, var(--gold), var(--blue)); }
+.stat.alert .value { color: var(--bad); }
+.stat.ok .value { color: var(--ok); }
+.stat.warn .value { color: var(--warn); }
+
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 16px; }
+.card { cursor: pointer; transition: .2s; }
+.card:hover { transform: translateY(-4px); border-color: var(--gold); box-shadow: 0 12px 28px rgba(18,58,102,.14); }
+.card h3 { font-size: 18px; color: var(--blue); margin-bottom: 8px; }
+.card p { font-size: 13px; color: #555; line-height: 1.45; min-height: 56px; }
+.card .foot { display: flex; justify-content: space-between; font-size: 12px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #ebeff5; color: #244; font-weight: 700; }
+
+.history-wrap table, .sheet-table { width: 100%; border-collapse: collapse; }
+.history-wrap th, .history-wrap td { border: 1px solid #d9e2ea; padding: 10px; font-size: 13px; vertical-align: top; }
+.history-wrap th { background: #f4f7fb; color: var(--blue); text-transform: uppercase; font-size: 11px; letter-spacing: .3px; }
+
+.btn {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(18,58,102,.08);
+}
+.btn-primary { background: var(--blue); color: #fff; }
+.btn-primary:hover { background: #0a2a4a; }
+.btn-secondary { background: #e6ebf2; color: #111; }
+.btn-secondary:hover { background: #d5dde8; }
+.btn-outline { background: #fff; border: 1px solid #bcc9d6; color: #333; }
+.btn-danger { background: var(--bad); color: #fff; }
+.btn-danger:hover { background: #b33a3a; }
+.btn-ok { background: var(--ok); color: #fff; }
+.btn-ok:hover { background: #158a48; }
+.btn-warn { background: var(--warn); color: #fff; }
+.btn-warn:hover { background: #d48c00; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.progressbox { text-align: right; }
+.progressline { width: 180px; height: 9px; background: #dfe7ee; border-radius: 999px; overflow: hidden; margin-top: 4px; }
+.progressline>div { height: 100%; width: 0; background: var(--ok); }
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.field { display: grid; gap: 5px; margin-bottom: 10px; }
+.field label { font-size: 12px; font-weight: 700; color: #234; }
+.field input, .field select, .field textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #c8d3df;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 13px;
+  transition: .2s;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  border-color: #8ab6ff;
+  box-shadow: 0 0 0 3px rgba(102,153,255,.15);
+  outline: none;
+}
+
+.login-shell { display: flex; justify-content: center; align-items: center; min-height: 70vh; }
+.login-wrap { max-width: 480px; width: 100%; }
+.login-wrap h2 { color: var(--blue); margin-bottom: 6px; }
+.login-wrap p { font-size: 13px; color: #555; margin-bottom: 12px; line-height: 1.4; }
+
+.sheet-shell { padding: 22px; }
+.sheet-head { text-align: center; border: 1.8px solid var(--line); border-bottom: none; padding: 10px 8px; }
+.sheet-head .org { font-size: 19px; font-weight: 700; text-transform: uppercase; }
+.sheet-head .dept { font-size: 16px; font-weight: 700; margin-top: 2px; }
+.sheet-head .format { font-size: 13px; margin-top: 4px; font-weight: 700; }
+.sheet-head .title { font-size: 20px; font-weight: 700; margin-top: 8px; text-transform: uppercase; }
+.sheet-table { border: 1.8px solid var(--line); margin-bottom: 14px; }
+.sheet-table td, .sheet-table th { border: 1px solid var(--line); padding: 6px 8px; font-size: 13px; vertical-align: middle; }
+.sheet-table th { background: #f3f3f3; font-weight: 700; }
+.label-cell { font-weight: 700; background: #fafafa; width: 18%; }
+.value-input, .table-input, .table-textarea, .status-select, .plain-textarea, .sig-input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 0;
+  font-size: 13px;
+  outline: none;
+}
+.table-textarea, .plain-textarea { min-height: 42px; resize: vertical; }
+.check-section-row td { background: #efefef !important; font-weight: 700; text-transform: uppercase; }
+.status-select.select-yes { color: var(--ok); font-weight: 700; }
+.status-select.select-no { color: var(--bad); font-weight: 700; }
+.status-select.select-na { color: #555; font-weight: 700; }
+
+.badge {
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-block;
+}
+.badge.ok { background: #dff6e7; color: #0b6b2e; }
+.badge.mid { background: #fff2cf; color: #8a5a00; }
+.badge.bad { background: #fce1e1; color: #9d1616; }
+.badge.info { background: #e8eef6; color: #234; }
+.hidden { display: none !important; }
+.small { font-size: 12px; color: #666; }
+.note { font-size: 12px; color: #555; margin-top: 6px; }
+.toast {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  background: #123;
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  display: none;
+  z-index: 1000;
+}
+.child-row td { background: #f7fbfd !important; }
+.parent-rfi-row td { background: #ffffff !important; }
+.child-row td:nth-child(2) { border-left: 4px solid var(--accent); }
+
+.kpi-panel { margin-top: 16px; padding: 18px; border-radius: 18px; background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%); border: 1px solid #dbe4ee; }
+.kpi-panel-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+.kpi-title-wrap h3 { font-size: 18px; color: var(--blue); margin-bottom: 4px; font-weight: 800; }
+.kpi-title-wrap p { font-size: 12px; color: #607080; }
+.kpi-toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.kpi-chip { display: inline-flex; align-items: center; padding: 7px 12px; border-radius: 999px; background: #edf4ff; border: 1px solid #d5e3f3; color: #123a66; font-size: 12px; font-weight: 700; }
+.kpi-count { font-size: 12px; color: #556578; font-weight: 700; }
+.kpi-table-wrap { border: 1px solid #dbe4ee; border-radius: 14px; overflow: hidden; background: #fff; }
+.kpi-table { width: 100%; border-collapse: collapse; }
+.kpi-table th, .kpi-table td { padding: 11px 12px; border-bottom: 1px solid #e7edf5; font-size: 13px; text-align: left; vertical-align: middle; }
+.kpi-table th { background: #f4f8fc; color: #123a66; text-transform: uppercase; font-size: 11px; letter-spacing: .4px; font-weight: 800; }
+.kpi-table tbody tr:hover { background: #fbfdff; }
+.kpi-empty { text-align: center; color: #6a7786; padding: 26px 12px !important; }
+.kpi-status { display: inline-block; padding: 5px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; border: 1px solid transparent; }
+.kpi-status.approved { background: #dff6e7; color: #0b6b2e; }
+.kpi-status.comment { background: #fff2cf; color: #8a5a00; }
+.kpi-status.pending { background: #e8eef6; color: #234; }
+.kpi-status.rejected { background: #fce1e1; color: #9d1616; }
+.kpi-status.closed { background: #e7f3ff; color: #184e8c; }
+
+.data-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+.radio-line { display: flex; gap: 22px; flex-wrap: wrap; align-items: center; }
+.radio-line label { font-size: 13px; display: inline-flex; gap: 6px; align-items: center; }
+.scorebox { font-size: 14px; font-weight: 700; }
+
+@media (max-width: 900px) {
+  body { display: block; }
+  .sidebar { position: relative; width: 100%; height: auto; }
+  .main { margin: 0; width: 100%; }
+}
+@media print {
+  body { background: #fff; display: block; }
+  .sidebar, header, .topbar, .dashboard-grid, .cards, .history-wrap, .filters, #view-dashboard, #view-history, #view-settings, #view-login, #view-masters { display: none !important; }
+  .main { margin: 0; width: 100%; padding: 0; }
+  .view { display: none !important; }
+  #view-form.active { display: block !important; }
+  .sheet-shell, .sheet-head, .sheet-table { box-shadow: none !important; border-radius: 0 !important; }
+  .sheet-shell { border: none !important; padding: 0 !important; }
+}
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="brand">
+    <h2 id="brandTitle">QA/QC Suite</h2>
+    <small id="brandSub">Site Formats</small>
+  </div>
+  <div class="menu-item auth-only active" data-target="dashboard" onclick="switchView('dashboard')">📊 Dashboard</div>
+  <div class="menu-item auth-only" data-target="history" onclick="switchView('history')">📋 Saved Records</div>
+  <div class="menu-item auth-only" data-target="settings" onclick="switchView('settings')">⚙️ Configuration</div>
+  <div class="menu-item auth-only" data-target="masters" onclick="switchView('masters')">📚 Master Data</div>
+  <div class="menu-item auth-only" onclick="logout()">🚪 Logout</div>
+</div>
+
+<div class="main">
+  <header>
+    <div>
+      <h1 id="appTitle">QA/QC Inspection Suite</h1>
+      <div class="sub" id="appSub">Project Name - Location</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <span class="badge info" id="viewBadge">Not Logged In</span>
+      <div class="small" id="todayDate"></div>
+    </div>
+  </header>
+
+  <div id="view-login" class="view">
+    <div class="login-shell">
+      <div class="login-wrap">
+        <h2>🔐 Secure Sign In</h2>
+        <p>QA/QC Inspection Suite with multi-user workflow. Engineers submit RFIs, QA Heads review and approve.</p>
+        <div class="field">
+          <label>Username</label>
+          <input id="loginUser" placeholder="Enter username" value="engineer1">
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input id="loginPass" type="password" placeholder="Enter password" value="Eng123">
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn btn-primary" type="button" onclick="login()">Login</button>
+        </div>
+        <div class="note" style="margin-top:12px; line-height:1.8;">
+          <b>Demo Users:</b><br>
+          👷 Engineer: engineer1 / Eng123<br>
+          👔 QA Head: qahead / Head123<br>
+          📊 Manager: manager / Mgr123<br>
+          🔧 Admin: admin / Admin123<br>
+          👀 Consultant: consultant / View123
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="view-dashboard" class="view">
+    <div class="dashboard-grid">
+      <div class="stat active-kpi" data-kpi="total" onclick="filterKPI('total')"><div class="label">📄 Total RFI Raised</div><div class="value" id="totalRfiRaised">0</div></div>
+      <div class="stat" data-kpi="approval" onclick="filterKPI('approval')"><div class="label">✅ RFI Approval %</div><div class="value" id="avgCompliance">0%</div></div>
+      <div class="stat warn" data-kpi="pending" onclick="filterKPI('pending')"><div class="label">⏳ Pending RFI</div><div class="value" id="pendingRfi">0</div></div>
+      <div class="stat ok" data-kpi="approved" onclick="filterKPI('approved')"><div class="label">✔️ Approved RFI</div><div class="value" id="approvedRfi">0</div></div>
+      <div class="stat" data-kpi="approved_comment" onclick="filterKPI('approved_comment')"><div class="label">📝 Approved with Comment</div><div class="value" id="approvedCommentRfi">0</div></div>
+      <div class="stat" data-kpi="closed" onclick="filterKPI('closed')"><div class="label">🔒 Closed RFI</div><div class="value" id="closedRfi">0</div></div>
+      <div class="stat alert" data-kpi="rejected" onclick="filterKPI('rejected')"><div class="label">❌ Rejected RFI</div><div class="value" id="rejectedRfi">0</div></div>
+    </div>
+
+    <div class="small" style="margin-bottom:12px;">Click any stat above to filter RFIs below. Create a new RFI from the cards below.</div>
+
+    <div id="kpiResultSection" class="panel kpi-panel">
+      <div class="kpi-panel-head">
+        <div class="kpi-title-wrap">
+          <h3 id="kpiPanelTitle">All RFI List</h3>
+          <p id="kpiPanelSub">Showing all RFI records.</p>
+        </div>
+        <div class="kpi-toolbar">
+          <span class="kpi-chip" id="kpiActiveFilterChip">Active Filter: All RFI</span>
+          <span class="kpi-count" id="kpiRecordCount">0 records</span>
+        </div>
+      </div>
+      <div class="kpi-table-wrap">
+        <table class="kpi-table">
+          <thead><tr><th>RFI No</th><th>Project / Location</th><th>Status</th><th>Owner</th><th>Saved Date</th><th>Action</th></tr></thead>
+          <tbody id="kpiResultBody"><tr><td colspan="6" class="kpi-empty">No RFI records found. Create your first RFI from the dashboard cards below.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="cards" id="templateCards"></div>
+  </div>
+
+  <div id="view-history" class="view">
+    <div class="history-wrap">
+      <div class="filters">
+        <div class="field"><label>Project</label><input id="fltProject" oninput="renderHistory()" placeholder="Filter by project"></div>
+        <div class="field"><label>Form Type</label><select id="fltType" onchange="renderHistory()"><option value="">All</option></select></div>
+        <div class="field"><label>Contractor</label><input id="fltContractor" oninput="renderHistory()" placeholder="Filter by contractor"></div>
+        <div class="field"><label>Discipline</label><input id="fltDiscipline" oninput="renderHistory()" placeholder="Filter by discipline"></div>
+        <div class="field"><label>Status</label>
+          <select id="fltStatus" onchange="renderHistory()">
+            <option value="">All</option>
+            <option>Draft</option><option>Submitted</option><option>Under Review</option>
+            <option>Approved</option><option>Approved with Comment</option>
+            <option>Rejected</option><option>Closed</option>
+          </select>
+        </div>
+        <div class="field"><label>From Date</label><input id="fltDateFrom" type="date" onchange="renderHistory()"></div>
+        <div class="field"><label>To Date</label><input id="fltDateTo" type="date" onchange="renderHistory()"></div>
+        <div class="field"><label>Owner</label><input id="fltOwner" oninput="renderHistory()" placeholder="Filter by owner"></div>
+        <div class="field"><label>&nbsp;</label><button class="btn btn-primary" type="button" onclick="printFilteredHistory()">🖨️ Print RFI</button></div>
+      </div>
+      <div class="data-actions">
+        <button class="btn btn-secondary" onclick="exportData()">📤 Export Data</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📥 Import Data</button>
+        <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+        <span class="small" style="margin-left:auto;align-self:center;" id="syncStatus">💾 Local storage</span>
+      </div>
+      <table>
+        <thead><tr><th>Saved Date</th><th>Format</th><th>Project / Structure</th><th>Prepared By</th><th>Status</th><th>Defects</th><th>Compliance</th><th>Action</th></tr></thead>
+        <tbody id="historyBody"><tr><td colspan="8" style="text-align:center;color:#666;">No records found. Create a new RFI from the dashboard.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="view-settings" class="view">
+    <div class="panel">
+      <div class="topbar"><div><div style="font-size:18px;font-weight:700;color:var(--blue);">⚙️ Settings / Configuration</div><div class="small">Configure company and project details.</div></div></div>
+      <form id="configForm" onsubmit="saveConfig(event)">
+        <div class="filters">
+          <div class="field"><label>Company Name</label><input id="cfgCompanyName"></div>
+          <div class="field"><label>Project Name</label><input id="cfgProjectName"></div>
+          <div class="field"><label>Location</label><input id="cfgLocation"></div>
+          <div class="field"><label>Format Prefix</label><input id="cfgFormatPrefix"></div>
+          <div class="field"><label>Business / Package Name</label><input id="cfgBusinessPackage"></div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn btn-primary" type="submit">💾 Save Configuration</button>
+          <button class="btn btn-secondary" type="button" onclick="resetConfig()">↩️ Reset to Default</button>
+        </div>
+      </form>
+    </div>
+    <div id="adminToolsBox" class="panel hidden">
+      <div class="topbar"><div><div style="font-size:18px;font-weight:700;color:var(--blue);">🔧 Admin Utilities</div><div class="small">Export full app data or delete all data. Admin only.</div></div></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-primary" type="button" onclick="exportAllDataJSON()">📤 Export Full Data</button>
+        <button class="btn btn-danger" type="button" onclick="secureDeleteAllData()">🗑️ Delete All Data</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="view-masters" class="view">
+    <div class="panel">
+      <div class="topbar"><div><div style="font-size:18px;font-weight:700;color:var(--blue);">📚 Master Data</div><div class="small">Manage dropdown values for the system.</div></div></div>
+      <form id="masterForm" onsubmit="saveMasters(event)">
+        <div class="filters">
+          <div class="field"><label>Disciplines (comma separated)</label><textarea id="mstDisciplines" rows="3"></textarea></div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn btn-primary" type="submit">💾 Save Master Data</button>
+          <button class="btn btn-secondary" type="button" onclick="resetMasters()">↩️ Reset</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="view-form" class="view">
+    <div class="topbar">
+      <div>
+        <button class="btn btn-secondary" onclick="backFromForm()">← Back</button>
+        <button class="btn btn-outline" onclick="printCurrentRecordWithChecklists()" style="margin-left:8px;">🖨️ Print / PDF</button>
+        <button class="btn btn-primary" onclick="document.getElementById('recordForm').requestSubmit()" style="margin-left:8px;">💾 Save</button>
+        <button id="btnSubmit" class="btn btn-warn" onclick="submitRFI()" type="button" style="margin-left:8px;">📤 Submit</button>
+        <button id="btnReview" class="btn btn-secondary hidden" onclick="markUnderReview()" type="button" style="margin-left:8px;">🔍 Under Review</button>
+        <button id="btnApprove" class="btn btn-ok hidden" onclick="approveRFI()" type="button" style="margin-left:8px;">✅ Approve</button>
+        <button id="btnApproveComment" class="btn btn-secondary hidden" onclick="approveWithCommentRFI()" type="button" style="margin-left:8px;">📝 Approve w/ Comment</button>
+        <button id="btnReject" class="btn btn-danger hidden" onclick="rejectRFI()" type="button" style="margin-left:8px;">❌ Reject</button>
+        <button id="btnClose" class="btn btn-primary hidden" onclick="closeRFI()" type="button" style="margin-left:8px;">🔒 Close</button>
+      </div>
+      <div class="progressbox">
+        <div class="small">Completion Progress</div>
+        <div id="progressText" class="scorebox">0 / 0 Items | 0%</div>
+        <div class="progressline"><div id="progressBar" style="width:0%;"></div></div>
+      </div>
+    </div>
+
+    <div id="workflowPanel" class="panel" style="margin-bottom:12px;">
+      <div class="filters">
+        <div class="field"><label>Status</label><input id="wfStatus" disabled></div>
+        <div class="field"><label>Owner</label><input id="wfOwner" disabled></div>
+        <div class="field"><label>Approved/Rejected By</label><input id="wfDecisionBy" disabled></div>
+        <div class="field"><label>Comment</label><input id="wfComment" placeholder="Enter workflow comment"></div>
+        <div class="field"><label>Attachment</label><input id="wfAttachment" type="file" multiple></div>
+      </div>
+    </div>
+
+    <div id="relatedChecklistPanel" class="panel" style="margin-bottom:12px;">
+      <div style="font-size:16px;font-weight:700;color:var(--blue);margin-bottom:6px;">📎 Linked Checklists</div>
+      <div id="rfiChecklistButtons" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+        <button type="button" class="btn btn-secondary" id="btnAddBrickChecklist" onclick="launchChecklistFromRfi('brick_masonry')">🧱 Brick Masonry</button>
+        <button type="button" class="btn btn-secondary" id="btnAddPlasterChecklist" onclick="launchChecklistFromRfi('plaster_work')">🧹 Plaster Work</button>
+        <button type="button" class="btn btn-secondary" id="btnAddConcreteChecklist" onclick="launchChecklistFromRfi('concrete_pour_record')">🏗️ Concrete Pour</button>
+      </div>
+      <div id="relatedChecklistList" class="small">No linked checklist yet.</div>
+    </div>
+
+    <form id="recordForm" onsubmit="saveReport(event)">
+      <div class="sheet-shell">
+        <div class="sheet-head">
+          <div class="org" id="sheetOrg">QA/QC Suite</div>
+          <div class="dept">QA / QC RECORDS FOR SITE</div>
+          <div class="format" id="fmtNo">Format No. - QA / QC / SITE / 01</div>
+          <div class="title" id="sheetTitle">REQUEST FOR INSPECTION</div>
+        </div>
+        <div id="sheetBody"></div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="toast" class="toast">✅ Message</div>
+
+<script>
+// ============================================
+// DATA LAYER
+// ============================================
+const STORAGE_KEY = 'qaqc_suite_data_v2';
+const CONFIG_KEY = 'qaqc_suite_config_v2';
+const MASTER_KEY = 'qaqc_suite_masters_v2';
+const SESSION_KEY = 'qaqc_suite_session_v2';
+const API_URL = '/api/data';  // <-- ADDED for server sync
+
+let savedReports = [];
+let appConfig = { companyName: 'QA/QC Suite', projectName: 'Project Name', location: 'Location', formatPrefix: 'QA / QC', businessPackage: 'Site Formats' };
+let masters = { disciplines: ['Civil', 'Mechanical', 'Electrical'] };
+let currentUser = null;
+let activeTemplateKey = null;
+let activeReportId = null;
+let previousView = 'dashboard';
+let pendingReturnRfiId = null;
+let pendingLinkedRfiNo = null;
+let pendingParentMeta = null;
+let currentKpiFilter = 'total';
+let currentKpiRows = [];
+
+const users = [
+  { u: 'engineer1', p: 'Eng123', role: 'engineer', name: 'Engineer 1' },
+  { u: 'qahead', p: 'Head123', role: 'qa_head', name: 'QA Head' },
+  { u: 'manager', p: 'Mgr123', role: 'manager', name: 'Project Manager' },
+  { u: 'admin', p: 'Admin123', role: 'admin', name: 'Admin' },
+  { u: 'consultant', p: 'View123', role: 'consultant', name: 'Consultant' }
+];
+
+const templates = {
+  rfi: {
+    formatNo: 'QA / QC / SITE / 01',
+    menuTitle: 'RFI',
+    title: 'REQUEST FOR INSPECTION',
+    summary: 'Standard RFI with configurable branding, role/workflow, audit trail and approvals.',
+    metaRows: [
+      [{ l: 'Project :-', k: 'project', d: 'Project Name' }, { l: 'RFI No.:', k: 'rfiNo' }],
+      [{ l: 'Package :-', k: 'package' }, { l: 'RFI Rev.No.:', k: 'rfiRev' }],
+      [{ l: 'Contractor :-', k: 'contractor' }, { l: 'Discipline :', k: 'discipline' }],
+      [{ l: 'Project Code :-', k: 'projectCode' }],
+      [{ l: 'DRAWING NO.:', k: 'drawingNo' }, { l: 'DATE OF ISSUE :', k: 'issueDate', t: 'date' }],
+      [{ l: 'EQUIPMENT / ITEM No :', k: 'itemNo' }, { l: 'FQA REF :', k: 'fqaRef' }],
+      [{ l: 'EQUIPMENT / ITEM NAME :', k: 'itemName' }],
+      [{ l: 'ATTACHMENTS :', k: 'attachments' }],
+      [{ l: 'Inspection Type :', k: 'inspectionType', t: 'select', options: ['Material Inspection', 'Work Inspection'] }, { l: 'Raised By :', k: 'raisedBy' }],
+      [{ l: 'Inspection Date', k: 'date', t: 'date' }, { l: 'Inspection Location/Area', k: 'location' }],
+      [{ l: 'Inspection to be done', k: 'inspectionScope' }]
+    ],
+    sections: [
+      { type: 'simple_check', title: 'Contractor / Company Check Requirements', items: ['Hold', 'Witness', 'Review/Sur.'] },
+      { type: 'table', title: 'Offer Detail', columns: ['Sl no', 'Description', 'Weight / Qty', 'Remarks'], rows: 5 },
+      { type: 'accepted', title: 'Work Accepted by', rows: ['Contractor/Execution', 'Company/Execution'] },
+      { type: 'status', title: 'INSPECTION STATUS', options: ['Accepted', 'Not Accepted', 'Accepted with comments', 'Reviewed'] },
+      { type: 'textarea', title: 'Remarks/Comments', note: 'Write general comments only.' },
+      { type: 'signatures', title: 'Signature Block', roles: ['Contractor QA/QC', 'Company FQA', 'Company QA/QC'] }
+    ]
+  },
+  brick_masonry: {
+    formatNo: 'QA / QC / SITE / 02',
+    menuTitle: 'Brick Masonry',
+    title: 'CHECK LIST FOR BRICK MASONRY WORK',
+    summary: 'Brick masonry checklist with manual fields and linked RFI support.',
+    metaRows: [
+      [{ l: 'Linked RFI No :', k: 'linkedRfi', t: 'select', options: [] }],
+      [{ l: 'Project :-', k: 'project', d: 'Project Name' }, { l: 'Name of Building / Structure :', k: 'building' }],
+      [{ l: 'Package :-', k: 'package' }],
+      [{ l: 'Contractor :-', k: 'contractor' }, { l: 'Location of Wall :', k: 'wallLocation' }],
+      [{ l: 'Project Code :-', k: 'projectCode' }],
+      [{ l: 'Date:-', k: 'date', t: 'date' }, { l: 'Mix Proportion Mortar:-', k: 'mixProportion' }]
+    ],
+    sections: [
+      { type: 'checklist', columns: ['Sr. No.', 'Description', 'Status', 'Remarks'], groups: [
+        { name: 'PRE-BRICK WORK', items: ['Cleaning of work area', 'Check for Marking', 'Check for scaffolding', 'Hacking & curing compound removal', 'Sprinkling of water', 'Bricks soaked for 24 hours', 'Platform for mixing', 'Mortar Mix Proportion'] },
+        { name: 'DURING BRICK WORK', items: ['Wall sizes & thickness', 'Dimension, Plumb & Level', 'Type of Bond', 'Staggering of Joints', 'Sizes of Openings', 'Cleaning & Raking of Joints', 'Mortar consumption within 30 min'] },
+        { name: 'POST BRICK WORK', items: ['Sufficient Curing (7 days)', 'Pointing balance', 'Removal of Debris', 'Cube Samples Collected'] }
+      ]},
+      { type: 'textarea', title: 'Conclusion by Observation Officer', note: 'Released / Not Released for Plaster' },
+      { type: 'signatures', title: 'Signatures', roles: ['Contractor Representative', 'Client Representative'] }
+    ]
+  },
+  plaster_work: {
+    formatNo: 'QA / QC / SITE / 04',
+    menuTitle: 'Plaster Work',
+    title: 'CHECK LIST FOR PLASTER WORK',
+    summary: 'Plaster work checklist with manual fields and linked RFI support.',
+    metaRows: [
+      [{ l: 'Linked RFI No :', k: 'linkedRfi', t: 'select', options: [] }],
+      [{ l: 'Project :-', k: 'project', d: 'Project Name' }, { l: 'Name of Building / Structure :', k: 'building' }],
+      [{ l: 'Package :-', k: 'package' }],
+      [{ l: 'Contractor :-', k: 'contractor' }, { l: 'Location of Wall :', k: 'wallLocation' }],
+      [{ l: 'Project Code :-', k: 'projectCode' }],
+      [{ l: 'Date:-', k: 'date', t: 'date' }, { l: 'Plaster :-', k: 'plasterType', t: 'select', options: ['External', 'Internal'] }],
+      [{ l: 'Mix Proportion Mortar:-', k: 'mixProportion' }]
+    ],
+    sections: [
+      { type: 'checklist', columns: ['Sr. No.', 'Description', 'Status', 'Remarks'], groups: [
+        { name: 'PRE-PLASTER', items: ['Completion of Preceding activities', 'Cleaning of work area', 'Scaffolding safety', 'Hacking & curing compound removal', 'Sprinkling of water', 'Type of plastering', 'Platform for mixing', 'Measuring boxes', 'Wire mesh at critical joints'] },
+        { name: 'DURING PLASTER WORK', items: ['Mortar Mix Proportion', 'Waterproofing compound', 'Ceiling plaster prior to wall', 'Rough surface on first coat', 'Second coat timing', 'Thickness of plaster', 'Dimension, plumb & level'] },
+        { name: 'POST PLASTER WORK', items: ['7 days of curing', 'Removal of debris', 'Cube samples collected'] }
+      ]},
+      { type: 'signatures', title: 'Signatures', roles: ['Contractor Representative', 'Client Representative'] }
+    ]
+  },
+  concrete_pour_record: {
+    formatNo: 'QA / QC / SITE / 09',
+    menuTitle: 'Concrete Pour Record',
+    title: 'CONCRETE POUR RECORD',
+    summary: 'Concrete pour record sheet with manual fields and linked RFI support.',
+    metaRows: [
+      [{ l: 'Linked RFI No :', k: 'linkedRfi', t: 'select', options: [] }],
+      [{ l: 'Structure', k: 'structure' }, { l: 'Date of Pouring', k: 'date', t: 'date' }],
+      [{ l: 'Location', k: 'location' }, { l: 'Method of Pouring', k: 'method' }],
+      [{ l: 'Part of Structure', k: 'partOfStructure' }, { l: 'Qty.Required', k: 'qtyRequired' }],
+      [{ l: 'Grade of Concrete', k: 'grade' }, { l: 'Ambient Temp. (°C)', k: 'ambientTemp' }],
+      [{ l: 'Project', k: 'project', d: 'Project Name' }, { l: 'Contractor', k: 'contractor' }],
+      [{ l: 'Prepared By', k: 'preparedBy' }]
+    ],
+    sections: [
+      { type: 'table', title: 'Concrete Pour Record', columns: ['Sl.no', 'T.M.no.', 'Dep. Time', 'Slump at BP', 'Arrival', 'Slump at site', 'Pour start', 'Pour end', 'Qty(cum)', 'Cumulative', 'Remarks'], rows: 10 },
+      { type: 'signatures', title: 'Signatures', roles: ['Contractor Representative', 'Client Representative'] }
+    ]
+  }
+};
+
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.innerText = msg;
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 2000);
+}
+
+function esc(v) {
+  return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function fmtDate(v) {
+  if (!v) return '';
+  const d = new Date(v);
+  return String(d) === 'Invalid Date' ? String(v) : d.toLocaleDateString('en-GB');
+}
+
+function todayText() {
+  return new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function getRfiRecords() { return savedReports.filter(r => r.templateKey === 'rfi'); }
+function getRfiOptions() {
+  const vals = getRfiRecords().map(r => r.meta?.rfiNo || r.id).filter(Boolean);
+  return [...new Set(vals)];
+}
+
+function getLinkedChecklistsForRfi(rfiNo) {
+  return savedReports.filter(r => r.templateKey !== 'rfi' && (r.meta?.linkedRfi || '') === rfiNo);
+}
+
+function canAddChecklistToRfi(rec) {
+  if (!rec) return false;
+  return !['Approved', 'Approved with Comment', 'Rejected', 'Closed'].includes(rec.status || 'Draft');
+}
+
+function badgeForStatus(s) {
+  const map = {
+    'Approved': 'ok', 'Closed': 'ok',
+    'Approved with Comment': 'mid',
+    'Rejected': 'bad',
+    'Submitted': 'mid', 'Under Review': 'mid'
+  };
+  const cls = map[s] || 'info';
+  return `<span class="badge ${cls}">${esc(s || 'Draft')}</span>`;
+}
+
+function statusClass(v) {
+  if (v === 'Yes') return 'select-yes';
+  if (v === 'No') return 'select-no';
+  if (v === 'NA') return 'select-na';
+  return '';
+}
+
+function buildFormatNo(raw) {
+  const m = String(raw || '').match(/(\d{2})\s*$/);
+  const suffix = m ? m[1] : '01';
+  return (appConfig.formatPrefix || 'QA / QC').trim() + ' / SITE / ' + suffix;
+}
+
+function getProjectDisplay() {
+  const p = (appConfig.projectName || '').trim();
+  const l = (appConfig.location || '').trim();
+  if (p && l) return p + ' - ' + l;
+  return p || l || 'Project Name - Location';
+}
+
+// ============================================
+// STORAGE FUNCTIONS
+// ============================================
+function loadDb() {
+  try {
+    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    savedReports = data;
+  } catch (e) { savedReports = []; }
+}
+
+// ============================================
+// UPDATED persistDb() - Saves to both localStorage AND server
+// ============================================
+function persistDb() {
+  // Save to localStorage
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(savedReports));
+  
+  // Save to server (if available)
+  try {
+    fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(savedReports)
+    }).catch(() => {});
+  } catch (e) {}
+  
+  updateStats();
+  renderHistory();
+}
+
+// ============================================
+// NEW: loadFromServer() - Loads data from server
+// ============================================
+async function loadFromServer() {
+  try {
+    const response = await fetch(API_URL);
+    if (response.ok) {
+      const data = await response.json();
+      if (data.length > 0) {
+        savedReports = data;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(savedReports));
+        renderHistory();
+        updateStats();
+        toast('✅ Synced with server');
+      }
+    }
+  } catch (e) {
+    // Server offline - use local data
+    console.log('Server offline, using local data');
+  }
+}
+
+function loadConfig() {
+  try {
+    const data = JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}');
+    appConfig = { ...appConfig, ...data };
+  } catch (e) {}
+}
+
+function saveConfig(ev) {
+  ev.preventDefault();
+  appConfig = {
+    companyName: document.getElementById('cfgCompanyName').value.trim() || 'QA/QC Suite',
+    projectName: document.getElementById('cfgProjectName').value.trim() || 'Project Name',
+    location: document.getElementById('cfgLocation').value.trim() || 'Location',
+    formatPrefix: document.getElementById('cfgFormatPrefix').value.trim() || 'QA / QC',
+    businessPackage: document.getElementById('cfgBusinessPackage').value.trim() || 'Site Formats'
+  };
+  localStorage.setItem(CONFIG_KEY, JSON.stringify(appConfig));
+  applyConfig();
+  toast('✅ Configuration saved');
+}
+
+function resetConfig() {
+  appConfig = { companyName: 'QA/QC Suite', projectName: 'Project Name', location: 'Location', formatPrefix: 'QA / QC', businessPackage: 'Site Formats' };
+  localStorage.setItem(CONFIG_KEY, JSON.stringify(appConfig));
+  populateConfigForm();
+  applyConfig();
+  toast('↩️ Configuration reset');
+}
+
+function loadMasters() {
+  try {
+    const data = JSON.parse(localStorage.getItem(MASTER_KEY) || '{}');
+    masters = { disciplines: ['Civil', 'Mechanical', 'Electrical'], ...data };
+  } catch (e) {}
+}
+
+function saveMasters(ev) {
+  ev.preventDefault();
+  const val = document.getElementById('mstDisciplines').value || '';
+  masters.disciplines = val.split(',').map(s => s.trim()).filter(Boolean);
+  localStorage.setItem(MASTER_KEY, JSON.stringify(masters));
+  toast('✅ Master data saved');
+}
+
+function resetMasters() {
+  masters = { disciplines: ['Civil', 'Mechanical', 'Electrical'] };
+  localStorage.setItem(MASTER_KEY, JSON.stringify(masters));
+  populateMastersForm();
+  toast('↩️ Master data reset');
+}
+
+function loadSession() {
+  try {
+    const data = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+    currentUser = data;
+  } catch (e) { currentUser = null; }
+}
+
+function saveSession() {
+  localStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
+}
+
+// ============================================
+// AUTH FUNCTIONS
+// ============================================
+function login() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value || '';
+  const found = users.find(x => x.u === u && x.p === p);
+  if (!found) { toast('❌ Wrong username/password'); return; }
+  currentUser = { username: found.u, role: found.role, display: found.name };
+  saveSession();
+  document.querySelectorAll('.auth-only').forEach(el => el.classList.remove('hidden'));
+  renderCards();
+  renderHistory();
+  updateStats();
+  updateAdminToolsVisibility();
+  switchView('dashboard');
+  toast('✅ Welcome ' + found.name);
+}
+
+function logout() {
+  currentUser = null;
+  saveSession();
+  document.querySelectorAll('.auth-only').forEach(el => el.classList.add('hidden'));
+  switchView('login');
+  toast('👋 Logged out');
+}
+
+function canApprove() { return currentUser && (currentUser.role === 'qa_head' || currentUser.role === 'admin'); }
+function canSeeAll() { return currentUser && (currentUser.role === 'qa_head' || currentUser.role === 'admin' || currentUser.role === 'manager' || currentUser.role === 'consultant'); }
+function canDeleteRecord(rec) { return currentUser && (currentUser.role === 'admin' || currentUser.role === 'qa_head' || rec?.createdBy === currentUser.username); }
+
+function visibleReports() {
+  if (canSeeAll()) return savedReports.slice();
+  return savedReports.filter(r => r.createdBy === currentUser?.username);
+}
+
+function updateAdminToolsVisibility() {
+  const box = document.getElementById('adminToolsBox');
+  if (box) box.classList.toggle('hidden', !(currentUser && currentUser.role === 'admin'));
+}
+
+// ============================================
+// CONFIG APPLICATION
+// ============================================
+function applyConfig() {
+  document.getElementById('brandTitle').innerText = appConfig.companyName || 'QA/QC Suite';
+  document.getElementById('brandSub').innerText = appConfig.businessPackage || 'Site Formats';
+  document.getElementById('sheetOrg').innerText = appConfig.companyName || 'QA/QC Suite';
+  const cleanName = (appConfig.companyName || 'QA/QC Suite').replace(/\s*Inspection Suite$/i, '').replace(/\s*Suite$/i, '').trim() || 'QA/QC';
+  document.getElementById('appTitle').innerText = cleanName + ' Inspection Suite';
+  document.getElementById('appSub').innerText = getProjectDisplay();
+}
+
+function populateConfigForm() {
+  document.getElementById('cfgCompanyName').value = appConfig.companyName || '';
+  document.getElementById('cfgProjectName').value = appConfig.projectName || '';
+  document.getElementById('cfgLocation').value = appConfig.location || '';
+  document.getElementById('cfgFormatPrefix').value = appConfig.formatPrefix || '';
+  document.getElementById('cfgBusinessPackage').value = appConfig.businessPackage || '';
+}
+
+function populateMastersForm() {
+  document.getElementById('mstDisciplines').value = (masters.disciplines || []).join(', ');
+}
+
+// ============================================
+// VIEW NAVIGATION
+// ============================================
+function switchView(view) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  const pane = document.getElementById('view-' + view);
+  if (pane) pane.classList.add('active');
+  
+  document.querySelectorAll('.menu-item').forEach(v => v.classList.remove('active'));
+  const menu = document.querySelector('.menu-item[data-target="' + view + '"]');
+  if (menu) menu.classList.add('active');
+  
+  if (view !== 'form' && view !== 'login') previousView = view;
+
+  const badge = document.getElementById('viewBadge');
+  if (badge) {
+    if (currentUser) {
+      const roleMap = { engineer: '👷 Engineer', qa_head: '👔 QA Head', manager: '📊 Manager', admin: '🔧 Admin', consultant: '👀 Consultant' };
+      badge.innerText = roleMap[currentUser.role] || 'System Active';
+    } else {
+      badge.innerText = '🔒 Not Logged In';
+    }
+  }
+
+  if (view === 'dashboard') { updateStats(); renderCards(); if (currentKpiFilter) filterKPI(currentKpiFilter); }
+  if (view === 'history') { renderHistory(); }
+  if (view === 'settings') { populateConfigForm(); updateAdminToolsVisibility(); }
+  if (view === 'masters') { populateMastersForm(); }
+  if (view === 'login') {
+    document.getElementById('appTitle').innerText = 'QA/QC Inspection Suite';
+    document.getElementById('appSub').innerText = 'Secure Access';
+  }
+}
+
+function backFromForm() {
+  if (activeTemplateKey !== 'rfi' && pendingReturnRfiId) {
+    openTemplate('rfi', pendingReturnRfiId);
+    return;
+  }
+  switchView(previousView || 'dashboard');
+}
+
+// ============================================
+// CARD RENDERING
+// ============================================
+function renderCards() {
+  const host = document.getElementById('templateCards');
+  host.innerHTML = '';
+  
+  const flt = document.getElementById('fltType');
+  if (flt) {
+    flt.innerHTML = '<option value="">All</option>' +
+      Object.entries(templates).map(([k, t]) => `<option value="${esc(k)}">${esc(t.menuTitle)}</option>`).join('');
+  }
+
+  Object.entries(templates).forEach(([k, t]) => {
+    const c = document.createElement('div');
+    c.className = 'card';
+    c.innerHTML = `
+      <h3>📄 ${esc(t.menuTitle)}</h3>
+      <p>${esc(t.summary)}</p>
+      <div class="foot">
+        <span>${esc(buildFormatNo(t.formatNo))}</span>
+        <span>${t.menuTitle === 'RFI' ? '10 lines' : '19 lines'}</span>
+      </div>`;
+    c.onclick = () => openTemplate(k);
+    host.appendChild(c);
+  });
+}
+
+// ============================================
+// FORM RENDERING
+// ============================================
+function makeInput(id, value, type = 'text', options = []) {
+  if (type === 'select') {
+    const vals = options.length ? options : (id === 'meta_discipline' ? masters.disciplines : []);
+    return `<select class="value-input" id="${id}">${vals.map(v => `<option value="${esc(v)}" ${String(value) === String(v) ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select>`;
+  }
+  return `<input type="${type}" class="value-input" id="${id}" value="${esc(value || '')}">`;
+}
+
+function renderMetaRows(metaRows, metaData = {}) {
+  let html = '<table class="sheet-table">';
+  metaRows.forEach(row => {
+    html += '<tr>';
+    row.forEach(cell => {
+      let val = metaData[cell.k] !== undefined ? metaData[cell.k] : (cell.d || '');
+      let type = cell.t || 'text';
+      let opts = cell.options || [];
+      
+      if (cell.k === 'discipline') {
+        type = 'select';
+        opts = masters.disciplines.length ? masters.disciplines : ['Civil', 'Mechanical', 'Electrical'];
+        if (!val) val = opts[0] || '';
+      }
+      if (cell.k === 'linkedRfi') {
+        type = 'select';
+        opts = getRfiOptions();
+        if (!val && opts.length) val = opts[0] || '';
+      }
+      html += `<td class="label-cell">${esc(cell.l)}</td><td>${makeInput('meta_' + cell.k, val, type, opts)}</td>`;
+    });
+    if (row.length === 1) html += '<td colspan="2"></td>';
+    html += '</tr>';
+  });
+  return html + '</table>';
+}
+
+function renderSimpleCheck(sec, secData = {}) {
+  let html = `<table class="sheet-table"><tr><th colspan="5">${esc(sec.title)}</th></tr><tr><th>Check Item</th><th>Contractor</th><th>Company</th><th>Remarks</th><th>Status</th></tr>`;
+  sec.items.forEach((it, i) => {
+    const row = secData.items?.[i] || {};
+    html += `<tr>
+      <td>${esc(it)}</td>
+      <td><input class="table-input" value="${esc(row.contractor || '')}"></td>
+      <td><input class="table-input" value="${esc(row.company || '')}"></td>
+      <td><input class="table-input" value="${esc(row.remarks || '')}"></td>
+      <td><select class="status-select ${statusClass(row.status)}" onchange="stylizeStatus(this);updateProgress()">
+        <option value=""></option>
+        <option value="Yes" ${row.status === 'Yes' ? 'selected' : ''}>Yes</option>
+        <option value="No" ${row.status === 'No' ? 'selected' : ''}>No</option>
+        <option value="NA" ${row.status === 'NA' ? 'selected' : ''}>NA</option>
+      </select></td>
+    </tr>`;
+  });
+  return html + '</table>';
+}
+
+function renderChecklist(sec, secData = {}) {
+  let html = `<table class="sheet-table"><tr>${sec.columns.map(c => `<th>${esc(c)}</th>`).join('')}</tr>`;
+  let itemIndex = 0, sr = 1;
+  sec.groups.forEach(g => {
+    html += `<tr class="check-section-row"><td colspan="4">${esc(g.name)}</td></tr>`;
+    g.items.forEach(item => {
+      const row = secData.items?.[itemIndex] || {};
+      html += `<tr>
+        <td style="width:8%;text-align:center;">${sr++}</td>
+        <td>${esc(item)}</td>
+        <td style="width:18%;"><select class="status-select ${statusClass(row.status)}" onchange="stylizeStatus(this);updateProgress()">
+          <option value=""></option>
+          <option value="Yes" ${row.status === 'Yes' ? 'selected' : ''}>Yes</option>
+          <option value="No" ${row.status === 'No' ? 'selected' : ''}>No</option>
+          <option value="NA" ${row.status === 'NA' ? 'selected' : ''}>NA</option>
+        </select></td>
+        <td style="width:24%;"><textarea class="table-textarea">${esc(row.remarks || '')}</textarea></td>
+      </tr>`;
+      itemIndex++;
+    });
+  });
+  return html + '</table>';
+}
+
+function renderTable(sec, secData = {}) {
+  let html = `<table class="sheet-table"><tr><th colspan="${sec.columns.length}">${esc(sec.title)}</th></tr><tr>${sec.columns.map(c => `<th>${esc(c)}</th>`).join('')}</tr>`;
+  for (let r = 0; r < sec.rows; r++) {
+    const row = secData.rows?.[r] || [];
+    html += '<tr>' + sec.columns.map((c, ci) => `<td><input class="table-input" value="${esc(row[ci] ?? (ci === 0 ? r + 1 : ''))}"></td>`).join('') + '</tr>';
+  }
+  return html + '</table>';
+}
+
+function renderAccepted(sec, secData = {}) {
+  let html = `<table class="sheet-table"><tr><th colspan="4">${esc(sec.title)}</th></tr><tr><th>Role</th><th>Name</th><th>Signature</th><th>Date</th></tr>`;
+  sec.rows.forEach((role, i) => {
+    const row = secData.rows?.[i] || {};
+    html += `<tr>
+      <td>${esc(role)}</td>
+      <td><input class="table-input" value="${esc(row.name || '')}"></td>
+      <td><input class="table-input" value="${esc(row.sign || '')}"></td>
+      <td><input type="date" class="table-input" value="${esc(row.date || '')}"></td>
+    </tr>`;
+  });
+  return html + '</table>';
+}
+
+function renderStatus(sec, secData = {}, si) {
+  const val = secData.value || '';
+  return `<table class="sheet-table"><tr><th>${esc(sec.title)}</th></tr><tr><td><div class="radio-line">${sec.options.map(o => `<label><input type="radio" name="status_${si}" value="${esc(o)}" ${val === o ? 'checked' : ''}> ${esc(o)}</label>`).join('')}</div></td></tr></table>`;
+}
+
+function renderTextarea(sec, secData = {}) {
+  return `<table class="sheet-table"><tr><th>${esc(sec.title)} ${sec.note ? `<span class="small">${esc(sec.note)}</span>` : ''}</th></tr><tr><td><textarea class="plain-textarea">${esc(secData.value || '')}</textarea></td></tr></table>`;
+}
+
+function renderSignatures(sec, secData = {}) {
+  let html = `<table class="sheet-table"><tr>${sec.roles.map(r => `<th>${esc(r)}</th>`).join('')}</tr><tr>`;
+  sec.roles.forEach((r, ri) => {
+    const e = secData.entries?.[ri] || {};
+    html += `<td><div style="display:grid;gap:8px;"><div><b>Name :</b> <input class="sig-input" value="${esc(e.name || '')}"></div><div><b>Signature :</b> <input class="sig-input" value="${esc(e.sign || '')}"></div><div><b>Date :</b> <input type="date" class="sig-input" value="${esc(e.date || '')}"></div></div></td>`;
+  });
+  return html + '</tr></table>';
+}
+
+function stylizeStatus(sel) {
+  sel.classList.remove('select-yes', 'select-no', 'select-na');
+  if (sel.value === 'Yes') sel.classList.add('select-yes');
+  else if (sel.value === 'No') sel.classList.add('select-no');
+  else if (sel.value === 'NA') sel.classList.add('select-na');
+}
+
+function renderSheet(t, report) {
+  const body = document.getElementById('sheetBody');
+  const meta = report?.meta || {};
+  const sectionsData = report?.sections || [];
+  let html = renderMetaRows(t.metaRows, meta);
+  t.sections.forEach((sec, si) => {
+    const secData = sectionsData[si] || {};
+    if (sec.type === 'simple_check') html += renderSimpleCheck(sec, secData);
+    if (sec.type === 'checklist') html += renderChecklist(sec, secData);
+    if (sec.type === 'table') html += renderTable(sec, secData);
+    if (sec.type === 'accepted') html += renderAccepted(sec, secData);
+    if (sec.type === 'status') html += renderStatus(sec, secData, si);
+    if (sec.type === 'textarea') html += renderTextarea(sec, secData);
+    if (sec.type === 'signatures') html += renderSignatures(sec, secData);
+  });
+  body.innerHTML = html;
+  body.querySelectorAll('.status-select').forEach(stylizeStatus);
+  updateProgress();
+}
+
+// ============================================
+// DATA COLLECTION
+// ============================================
+function collectMeta(t) {
+  const meta = {};
+  t.metaRows.flat().forEach(cell => {
+    const el = document.getElementById('meta_' + cell.k);
+    if (el) meta[cell.k] = el.value || '';
+  });
+  return meta;
+}
+
+function collectSections(t) {
+  const shell = document.getElementById('sheetBody');
+  if (!shell) return [];
+  const sectionTables = Array.from(shell.children).slice(1);
+  const sections = [];
+  sectionTables.forEach((tbl, idx) => {
+    const sec = t.sections[idx];
+    if (!sec) return;
+    if (sec.type === 'simple_check') {
+      const rows = Array.from(tbl.querySelectorAll('tr')).slice(2);
+      sections.push({ type: 'simple_check', items: rows.map(r => ({
+        contractor: r.cells[1]?.querySelector('input')?.value || '',
+        company: r.cells[2]?.querySelector('input')?.value || '',
+        remarks: r.cells[3]?.querySelector('input')?.value || '',
+        status: r.cells[4]?.querySelector('select')?.value || ''
+      })) });
+    }
+    if (sec.type === 'checklist') {
+      const items = [];
+      Array.from(tbl.querySelectorAll('tr')).slice(1).forEach(r => {
+        if (r.classList.contains('check-section-row')) return;
+        items.push({
+          status: r.cells[2]?.querySelector('select')?.value || '',
+          remarks: r.cells[3]?.querySelector('textarea')?.value || ''
+        });
+      });
+      sections.push({ type: 'checklist', items });
+    }
+    if (sec.type === 'table') {
+      sections.push({ type: 'table', rows: Array.from(tbl.querySelectorAll('tr')).slice(2).map(r => Array.from(r.querySelectorAll('input')).map(i => i.value)) });
+    }
+    if (sec.type === 'accepted') {
+      sections.push({ type: 'accepted', rows: Array.from(tbl.querySelectorAll('tr')).slice(2).map(r => ({
+        name: r.cells[1]?.querySelector('input')?.value || '',
+        sign: r.cells[2]?.querySelector('input')?.value || '',
+        date: r.cells[3]?.querySelector('input')?.value || ''
+      })) });
+    }
+    if (sec.type === 'status') {
+      const checked = tbl.querySelector('input[type="radio"]:checked');
+      sections.push({ type: 'status', value: checked ? checked.value : '' });
+    }
+    if (sec.type === 'textarea') {
+      sections.push({ type: 'textarea', value: tbl.querySelector('textarea')?.value || '' });
+    }
+    if (sec.type === 'signatures') {
+      const cells = tbl.querySelectorAll('tr')[1]?.cells || [];
+      sections.push({ type: 'signatures', entries: Array.from(cells).map((cell, ci) => ({
+        role: sec.roles[ci] || '',
+        name: cell.querySelectorAll('input')[0]?.value || '',
+        sign: cell.querySelectorAll('input')[1]?.value || '',
+        date: cell.querySelectorAll('input')[2]?.value || ''
+      })) });
+    }
+  });
+  return sections;
+}
+
+function collectSectionsForProgress() {
+  let total = 0, filled = 0, yes = 0, no = 0;
+  document.querySelectorAll('#sheetBody .status-select').forEach(sel => {
+    total++;
+    if (sel.value) {
+      filled++;
+      if (sel.value === 'Yes') yes++;
+      if (sel.value === 'No') no++;
+    }
+  });
+  return { total, filled, score: (yes + no) ? Math.round((yes / (yes + no)) * 100) : 100 };
+}
+
+function updateProgress() {
+  if (!activeTemplateKey) {
+    document.getElementById('progressText').innerText = '0 / 0 Items | 0%';
+    document.getElementById('progressBar').style.width = '0%';
+    return;
+  }
+  const s = collectSectionsForProgress();
+  document.getElementById('progressText').innerText = `${s.filled} / ${s.total} Items | ${s.score}%`;
+  document.getElementById('progressBar').style.width = s.total ? `${(s.filled / s.total) * 100}%` : '0%';
+}
+
+// ============================================
+// SAVE & WORKFLOW FUNCTIONS
+// ============================================
+function validateForm(meta) {
+  const req = [];
+  if (activeTemplateKey === 'rfi') {
+    if (!meta.project) req.push('Project');
+    if (!meta.contractor) req.push('Contractor');
+    if (!meta.date) req.push('Inspection Date');
+    if (!meta.location) req.push('Inspection Location');
+    if (!meta.raisedBy) req.push('Raised By');
+    if (!meta.discipline) req.push('Discipline');
+  } else {
+    if (!meta.project) req.push('Project');
+    if (!meta.contractor) req.push('Contractor');
+    if (!meta.date) req.push('Date');
+  }
+  if (req.length) { toast('❌ Required: ' + req.join(', ')); return false; }
+  return true;
+}
+
+function getAuditNow(action, comment) {
+  return { action, by: currentUser?.display || 'Unknown', role: currentUser?.role || '', at: new Date().toISOString(), comment: comment || '' };
+}
+
+function currentRecord() {
+  return activeReportId ? savedReports.find(r => r.id === activeReportId) : null;
+}
+
+function saveReport(ev) {
+  ev.preventDefault();
+  const t = templates[activeTemplateKey];
+  if (!t) return;
+  const meta = collectMeta(t);
+  if (!validateForm(meta)) return;
+  const sections = collectSections(t);
+  const existing = activeReportId ? savedReports.find(r => r.id === activeReportId) : null;
+  const id = activeReportId || ('rep_' + Date.now());
+  const titleLoc = meta.building || meta.structure || meta.location || meta.project || getProjectDisplay();
+  const preparedBy = meta.preparedBy || meta.raisedBy || meta.contractor || '';
+  const attachmentInput = document.getElementById('wfAttachment');
+  const attachmentNames = attachmentInput ? Array.from(attachmentInput.files || []).map(f => f.name) : (existing?.attachments || []);
+  const row = {
+    id, templateKey: activeTemplateKey, templateName: t.title,
+    formatNo: buildFormatNo(t.formatNo), meta, sections,
+    score: 0, defectsCount: 0, titleLoc, preparedBy,
+    status: existing?.status || (activeTemplateKey === 'rfi' ? 'Draft' : 'Closed'),
+    comment: document.getElementById('wfComment')?.value.trim() || existing?.comment || '',
+    attachments: attachmentNames,
+    createdBy: existing?.createdBy || currentUser?.username || '',
+    createdByDisplay: existing?.createdByDisplay || currentUser?.display || '',
+    decisionBy: existing?.decisionBy || '',
+    decisionByDisplay: existing?.decisionByDisplay || '',
+    savedAt: new Date().toISOString(),
+    audit: (existing?.audit || []).concat([getAuditNow(existing ? 'Updated' : 'Created', document.getElementById('wfComment')?.value.trim() || '')])
+  };
+  
+  // Calculate score
+  let yes = 0, no = 0;
+  sections.forEach(sec => {
+    if (sec.type === 'checklist' || sec.type === 'simple_check') {
+      (sec.items || []).forEach(i => {
+        if (i.status === 'Yes') yes++;
+        if (i.status === 'No') no++;
+      });
+    }
+  });
+  row.score = (yes + no) ? Math.round((yes / (yes + no)) * 100) : 100;
+  row.defectsCount = no;
+
+  if (activeTemplateKey !== 'rfi' && !row.meta.linkedRfi) {
+    toast('⚠️ Please select Linked RFI No before saving checklist');
+    return;
+  }
+
+  const idx = savedReports.findIndex(r => r.id === id);
+  if (idx >= 0) savedReports[idx] = row;
+  else savedReports.unshift(row);
+
+  activeReportId = id;
+  persistDb();
+  if (activeTemplateKey === 'rfi') {
+    pendingReturnRfiId = id;
+    pendingLinkedRfiNo = row.meta?.rfiNo || pendingLinkedRfiNo;
+    pendingParentMeta = {
+      project: meta.project, package: meta.package,
+      contractor: meta.contractor, projectCode: meta.projectCode,
+      date: meta.date
+    };
+  }
+  updateWorkflowButtons(row);
+  setChecklistButtonsState(activeTemplateKey === 'rfi' ? row : null);
+  toast('✅ Saved successfully');
+}
+
+function updateWorkflowButtons(rec) {
+  const isRfi = activeTemplateKey === 'rfi';
+  const panel = document.getElementById('workflowPanel');
+  const relatedPanel = document.getElementById('relatedChecklistPanel');
+  if (panel) panel.style.display = isRfi ? 'block' : 'none';
+  if (relatedPanel) relatedPanel.style.display = isRfi ? 'block' : 'none';
+  if (!isRfi) return;
+
+  const status = rec?.status || 'Draft';
+  document.getElementById('wfStatus').value = status;
+  document.getElementById('wfOwner').value = rec?.createdByDisplay || currentUser?.display || '';
+  document.getElementById('wfDecisionBy').value = rec?.decisionByDisplay || '';
+
+  document.getElementById('btnSubmit').classList.toggle('hidden', !(currentUser && ['engineer', 'admin'].includes(currentUser.role) && (!rec || ['Draft', 'Rejected'].includes(status))));
+  document.getElementById('btnReview').classList.toggle('hidden', !(canApprove() && status === 'Submitted'));
+  document.getElementById('btnApprove').classList.toggle('hidden', !(canApprove() && ['Submitted', 'Under Review'].includes(status)));
+  document.getElementById('btnApproveComment').classList.toggle('hidden', !(canApprove() && ['Submitted', 'Under Review'].includes(status)));
+  document.getElementById('btnReject').classList.toggle('hidden', !(canApprove() && ['Submitted', 'Under Review'].includes(status)));
+  document.getElementById('btnClose').classList.toggle('hidden', !(canApprove() && ['Approved', 'Approved with Comment'].includes(status)));
+
+  // Update linked checklists display
+  const rfiNo = rec?.meta?.rfiNo || rec?.id || '';
+  const linked = getLinkedChecklistsForRfi(rfiNo);
+  const list = document.getElementById('relatedChecklistList');
+  if (list) {
+    if (!linked.length) list.innerHTML = 'No linked checklist yet.';
+    else {
+      list.innerHTML = linked.map(c => `
+        <div style="margin-bottom:8px;padding:8px 10px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
+          <div><b>${esc(c.templateName)}</b> · ${fmtDate(c.savedAt)}<br><span class="small">Status: ${esc(c.status || 'Draft')}</span></div>
+          <div><button type="button" class="btn btn-secondary" style="padding:6px 10px;font-size:12px;" onclick="openLinkedChecklistFromRfi('${c.id}','${rec?.id || ''}')">Open</button></div>
+        </div>
+      `).join('');
+    }
+  }
+}
+
+function setChecklistButtonsState(rec) {
+  const isRfi = activeTemplateKey === 'rfi';
+  const disabled = !isRfi || !canAddChecklistToRfi(rec);
+  ['btnAddBrickChecklist', 'btnAddPlasterChecklist', 'btnAddConcreteChecklist'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.disabled = disabled;
+  });
+}
+
+// ============================================
+// RFI WORKFLOW ACTIONS
+// ============================================
+function submitRFI() {
+  const rec = currentRecord();
+  if (!rec) { toast('⚠️ Save RFI first'); return; }
+  if (rec.status === 'Submitted') { toast('⚠️ Already submitted'); return; }
+  rec.status = 'Submitted';
+  rec.comment = document.getElementById('wfComment').value.trim();
+  rec.audit.push(getAuditNow('Submitted', rec.comment));
+  rec.savedAt = new Date().toISOString();
+  persistDb();
+  updateWorkflowButtons(rec);
+  setChecklistButtonsState(rec);
+  toast('📤 RFI submitted successfully');
+}
+
+function markUnderReview() {
+  const rec = currentRecord();
+  if (!rec) { toast('⚠️ Open record first'); return; }
+  rec.status = 'Under Review';
+  rec.comment = document.getElementById('wfComment').value.trim();
+  rec.audit.push(getAuditNow('Marked Under Review', rec.comment));
+  const linkedCount = applyLinkedChecklistAction(rec, 'Under Review', 'Marked Under Review with parent RFI');
+  rec.savedAt = new Date().toISOString();
+  persistDb();
+  updateWorkflowButtons(rec);
+  toast(`🔍 RFI under review${linkedCount ? ` with ${linkedCount} linked checklist(s)` : ''}`);
+}
+
+function approveRFI() {
+  const rec = currentRecord();
+  if (!rec) { toast('⚠️ Open record first'); return; }
+  rec.status = 'Approved';
+  rec.comment = document.getElementById('wfComment').value.trim();
+  rec.decisionBy = currentUser.username;
+  rec.decisionByDisplay = currentUser.display;
+  rec.audit.push(getAuditNow('Approved', rec.comment));
+  const linkedCount = applyLinkedChecklistAction(rec, 'Approved', 'Approved with parent RFI');
+  rec.savedAt = new Date().toISOString();
+  persistDb();
+  updateWorkflowButtons(rec);
+  toast(`✅ RFI approved${linkedCount ? ` with ${linkedCount} linked checklist(s)` : ''}`);
+}
+
+function approveWithCommentRFI() {
+  const rec = currentRecord();
+  if (!rec) { toast('⚠️ Open record first'); return; }
+  const c = document.getElementById('wfComment').value.trim();
+  if (!c) { toast('⚠️ Enter approval comment'); return; }
+  rec.status = 'Approved with Comment';
+  rec.comment = c;
+  rec.decisionBy = currentUser.username;
+  rec.decisionByDisplay = currentUser.display;
+  rec.audit.push(getAuditNow('Approved with Comment', c));
+  const linkedCount = applyLinkedChecklistAction(rec, 'Approved with Comment', 'Approved with Comment with parent RFI');
+  rec.savedAt = new Date().toISOString();
+  persistDb();
+  updateWorkflowButtons(rec);
+  toast(`📝 RFI approved with comment${linkedCount ? ` and ${linkedCount} linked checklist(s)` : ''}`);
+}
+
+function rejectRFI() {
+  const rec = currentRecord();
+  if (!rec) { toast('⚠️ Open record first'); return; }
+  const c = document.getElementById('wfComment').value.trim();
+  if (!c) { toast('⚠️ Enter rejection comment'); return; }
+  rec.status = 'Rejected';
+  rec.comment = c;
+  rec.decisionBy = currentUser.username;
+  rec.decisionByDisplay = currentUser.display;
+  rec.audit.push(getAuditNow('Rejected', c));
+  const linkedCount = applyLinkedChecklistAction(rec, 'Rejected', 'Rejected with parent RFI');
+  rec.savedAt = new Date().toISOString();
+  persistDb();
+  updateWorkflowButtons(rec);
+  toast(`❌ RFI rejected${linkedCount ? ` with ${linkedCount} linked checklist(s)` : ''}`);
+}
+
+function closeRFI() {
+  const rec = currentRecord();
+  if (!rec) { toast('⚠️ Open record first'); return; }
+  rec.status = 'Closed';
+  rec.comment = document.getElementById('wfComment').value.trim();
+  rec.audit.push(getAuditNow('Closed', rec.comment));
+  rec.savedAt = new Date().toISOString();
+  persistDb();
+  updateWorkflowButtons(rec);
+  toast('🔒 RFI closed');
+}
+
+function applyLinkedChecklistAction(parentRec, nextStatus, auditAction) {
+  const rfiNo = parentRec?.meta?.rfiNo || parentRec?.id || '';
+  if (!rfiNo) return 0;
+  const linked = savedReports.filter(r => r.templateKey !== 'rfi' && (r.meta?.linkedRfi || '') === rfiNo);
+  linked.forEach(chk => {
+    chk.status = nextStatus;
+    chk.comment = parentRec?.comment || chk.comment || '';
+    chk.decisionBy = currentUser?.username || chk.decisionBy || '';
+    chk.decisionByDisplay = currentUser?.display || chk.decisionByDisplay || '';
+    chk.savedAt = new Date().toISOString();
+    chk.audit = (chk.audit || []).concat([getAuditNow(auditAction, parentRec?.comment || '')]);
+  });
+  return linked.length;
+}
+
+// ============================================
+// CHECKLIST LINKING
+// ============================================
+function captureCurrentRfiPrefill() {
+  return {
+    project: document.getElementById('meta_project')?.value || '',
+    package: document.getElementById('meta_package')?.value || '',
+    contractor: document.getElementById('meta_contractor')?.value || '',
+    projectCode: document.getElementById('meta_projectCode')?.value || '',
+    date: document.getElementById('meta_date')?.value || ''
+  };
+}
+
+function launchChecklistFromRfi(templateKey) {
+  if (activeTemplateKey !== 'rfi') { toast('⚠️ Open an RFI first'); return; }
+  const rfiNoEl = document.getElementById('meta_rfiNo');
+  const rfiNo = (rfiNoEl?.value || '').trim();
+  if (!rfiNo) { toast('⚠️ Enter RFI No first'); rfiNoEl?.focus(); return; }
+  saveReport({ preventDefault() {} });
+  const parent = currentRecord();
+  if (!parent || activeTemplateKey !== 'rfi') { toast('⚠️ Please save RFI first'); return; }
+  if (!canAddChecklistToRfi(parent)) { toast('⚠️ Cannot add checklist after approval/rejection'); return; }
+  pendingLinkedRfiNo = rfiNo;
+  pendingReturnRfiId = parent.id;
+  pendingParentMeta = captureCurrentRfiPrefill();
+  openTemplate(templateKey);
+}
+
+function openLinkedChecklistFromRfi(checklistId, parentRfiId) {
+  const chk = savedReports.find(r => r.id === checklistId);
+  if (!chk) { toast('⚠️ Checklist not found'); return; }
+  pendingReturnRfiId = parentRfiId || null;
+  openTemplate(chk.templateKey, chk.id);
+}
+
+function applyPendingChecklistPrefill() {
+  if (activeTemplateKey === 'rfi') return;
+  if (pendingLinkedRfiNo) {
+    const sel = document.getElementById('meta_linkedRfi');
+    if (sel) {
+      const exists = Array.from(sel.options).some(o => o.value === pendingLinkedRfiNo);
+      if (!exists) {
+        const opt = document.createElement('option');
+        opt.value = pendingLinkedRfiNo;
+        opt.textContent = pendingLinkedRfiNo;
+        sel.appendChild(opt);
+      }
+      sel.value = pendingLinkedRfiNo;
+    }
+  }
+  const m = pendingParentMeta || {};
+  const map = { project: 'meta_project', package: 'meta_package', contractor: 'meta_contractor', projectCode: 'meta_projectCode', date: 'meta_date' };
+  Object.entries(map).forEach(([k, id]) => {
+    const el = document.getElementById(id);
+    if (el && m[k] && !el.value) el.value = m[k];
+  });
+}
+
+// ============================================
+// OPEN TEMPLATE / RECORD
+// ============================================
+function openTemplate(key, reportId = null) {
+  activeTemplateKey = key;
+  activeReportId = reportId;
+  const t = templates[key];
+  const report = reportId ? savedReports.find(r => r.id === reportId) : null;
+
+  document.getElementById('fmtNo').innerText = 'Format No. - ' + buildFormatNo(t.formatNo);
+  document.getElementById('sheetTitle').innerText = t.title;
+  document.getElementById('appTitle').innerText = t.menuTitle;
+  document.getElementById('appSub').innerText = buildFormatNo(t.formatNo);
+
+  renderSheet(t, report);
+  applyPendingChecklistPrefill();
+  updateWorkflowButtons(report);
+  setChecklistButtonsState(report);
+  switchView('form');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function openRecord(id) {
+  const r = savedReports.find(x => x.id === id);
+  if (!r) return;
+  if (!canSeeAll() && r.createdBy !== currentUser.username) { toast('⛔ Access denied'); return; }
+  openTemplate(r.templateKey, r.id);
+}
+
+function deleteReport(id) {
+  const r = savedReports.find(x => x.id === id);
+  if (!r) return;
+  if (!canDeleteRecord(r)) { toast('⛔ Delete not allowed'); return; }
+  if (!confirm('Delete this saved report?')) return;
+  savedReports = savedReports.filter(x => x.id !== id);
+  persistDb();
+  toast('🗑️ Deleted');
+}
+
+// ============================================
+// DASHBOARD & STATS
+// ============================================
+function updateStats() {
+  const rows = visibleReports();
+  const rfis = rows.filter(r => r.templateKey === 'rfi');
+  const submittedPool = rfis.filter(r => ['Submitted', 'Under Review', 'Approved', 'Approved with Comment', 'Rejected', 'Closed'].includes(r.status));
+  const approvedOnly = rfis.filter(r => r.status === 'Approved').length;
+  const approvedWithComment = rfis.filter(r => r.status === 'Approved with Comment').length;
+  const closedCount = rfis.filter(r => r.status === 'Closed').length;
+  const approvalPct = submittedPool.length ? Math.round(((approvedOnly + approvedWithComment) / submittedPool.length) * 100) : 0;
+
+  document.getElementById('totalRfiRaised').innerText = rfis.length;
+  document.getElementById('avgCompliance').innerText = approvalPct + '%';
+  document.getElementById('pendingRfi').innerText = rfis.filter(r => ['Draft', 'Submitted', 'Under Review'].includes(r.status)).length;
+  document.getElementById('approvedRfi').innerText = approvedOnly;
+  document.getElementById('approvedCommentRfi').innerText = approvedWithComment;
+  document.getElementById('closedRfi').innerText = closedCount;
+  document.getElementById('rejectedRfi').innerText = rfis.filter(r => r.status === 'Rejected').length;
+
+  if (currentKpiFilter) filterKPI(currentKpiFilter);
+}
+
+function getSavedRecordFilterState() {
+  return {
+    project: document.getElementById('fltProject')?.value?.toLowerCase() || '',
+    type: document.getElementById('fltType')?.value || '',
+    contractor: document.getElementById('fltContractor')?.value?.toLowerCase() || '',
+    discipline: document.getElementById('fltDiscipline')?.value?.toLowerCase() || '',
+    status: document.getElementById('fltStatus')?.value || '',
+    fromDate: document.getElementById('fltDateFrom')?.value || '',
+    toDate: document.getElementById('fltDateTo')?.value || '',
+    owner: document.getElementById('fltOwner')?.value?.toLowerCase() || ''
+  };
+}
+
+function recordDateKey(rec) {
+  const raw = rec.meta?.date || rec.savedAt || '';
+  if (!raw) return '';
+  const m = String(raw).match(/^(\d{4}-\d{2}-\d{2})/);
+  if (m) return m[1];
+  const d = new Date(raw);
+  if (String(d) === 'Invalid Date') return '';
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function getHistoryFilteredRows() {
+  const f = getSavedRecordFilterState();
+  let rows = visibleReports();
+  rows = rows.filter(r => {
+    const dateKey = recordDateKey(r);
+    return (!f.project || String(r.titleLoc || r.meta?.project || '').toLowerCase().includes(f.project)) &&
+      (!f.type || r.templateKey === f.type) &&
+      (!f.contractor || String(r.meta?.contractor || '').toLowerCase().includes(f.contractor)) &&
+      (!f.discipline || String(r.meta?.discipline || '').toLowerCase().includes(f.discipline)) &&
+      (!f.status || (r.status || 'Draft') === f.status) &&
+      (!f.fromDate || (dateKey && dateKey >= f.fromDate)) &&
+      (!f.toDate || (dateKey && dateKey <= f.toDate)) &&
+      (!f.owner || String(r.createdByDisplay || '').toLowerCase().includes(f.owner));
+  });
+  return rows;
+}
+
+function renderHistory() {
+  const body = document.getElementById('historyBody');
+  body.innerHTML = '';
+  const rows = getHistoryFilteredRows();
+  if (!rows.length) {
+    body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#666;">No records found.</td></tr>';
+    return;
+  }
+
+  // Group RFIs with their linked checklists
+  const rfiRows = rows.filter(r => r.templateKey === 'rfi');
+  const checklistRows = rows.filter(r => r.templateKey !== 'rfi');
+  const checklistMap = new Map();
+  checklistRows.forEach(chk => {
+    const key = chk.meta?.linkedRfi || '__unlinked__';
+    if (!checklistMap.has(key)) checklistMap.set(key, []);
+    checklistMap.get(key).push(chk);
+  });
+
+  rfiRows.forEach(r => {
+    const linkedKey = r.meta?.rfiNo || r.id;
+    const linkedList = checklistMap.get(linkedKey) || [];
+    const scoreBadge = typeof r.score === 'number' ? `<span class="badge ${r.score < 60 ? 'bad' : r.score < 85 ? 'mid' : 'ok'}">${r.score}%</span>` : '<span class="badge mid">N/A</span>';
+    const tr = document.createElement('tr');
+    tr.className = 'parent-rfi-row';
+    tr.innerHTML = `
+      <td>${fmtDate(r.meta?.date || r.savedAt)}</td>
+      <td><b>${esc(r.templateName)}</b><br><span class="small">${esc(r.formatNo)}</span></td>
+      <td>${esc(r.titleLoc || '-')}</td>
+      <td>${esc(r.preparedBy || '-')}<br><span class="small">Owner: ${esc(r.createdByDisplay || '-')}</span><br><span class="small">Linked: ${linkedList.length}</span></td>
+      <td>${badgeForStatus(r.status || 'Draft')}</td>
+      <td>${r.defectsCount || 0}</td>
+      <td>${scoreBadge}</td>
+      <td><button class="btn btn-secondary" style="padding:6px 10px;font-size:12px;" onclick="openRecord('${r.id}')">Open</button> ${canDeleteRecord(r) ? `<button class="btn btn-danger" style="padding:6px 10px;font-size:12px;" onclick="deleteReport('${r.id}')">Delete</button>` : ''}</td>`;
+    body.appendChild(tr);
+    
+    linkedList.forEach(chk => {
+      const chkScoreBadge = typeof chk.score === 'number' ? `<span class="badge ${chk.score < 60 ? 'bad' : chk.score < 85 ? 'mid' : 'ok'}">${chk.score}%</span>` : '<span class="badge mid">N/A</span>';
+      const child = document.createElement('tr');
+      child.className = 'child-row';
+      child.innerHTML = `
+        <td>${fmtDate(chk.meta?.date || chk.savedAt)}</td>
+        <td style="padding-left:28px;"><span class="small">↳ Linked Checklist</span><br><b>${esc(chk.templateName)}</b><br><span class="small">${esc(chk.formatNo)}</span></td>
+        <td>${esc(chk.titleLoc || '-')}<br><span class="small">Linked to: ${esc(chk.meta?.linkedRfi || '-')}</span></td>
+        <td>${esc(chk.preparedBy || '-')}<br><span class="small">Owner: ${esc(chk.createdByDisplay || '-')}</span></td>
+        <td>${badgeForStatus(chk.status || 'Closed')}</td>
+        <td>${chk.defectsCount || 0}</td>
+        <td>${chkScoreBadge}</td>
+        <td><button class="btn btn-secondary" style="padding:6px 10px;font-size:12px;" onclick="openRecord('${chk.id}')">Open</button> ${canDeleteRecord(chk) ? `<button class="btn btn-danger" style="padding:6px 10px;font-size:12px;" onclick="deleteReport('${chk.id}')">Delete</button>` : ''}</td>`;
+      body.appendChild(child);
+    });
+  });
+
+  // Show unlinked checklists
+  checklistRows.filter(chk => !checklistMap.get(chk.meta?.linkedRfi || '__unlinked__')?.includes(chk)).forEach(chk => {
+    const chkScoreBadge = typeof chk.score === 'number' ? `<span class="badge ${chk.score < 60 ? 'bad' : chk.score < 85 ? 'mid' : 'ok'}">${chk.score}%</span>` : '<span class="badge mid">N/A</span>';
+    const child = document.createElement('tr');
+    child.innerHTML = `
+      <td>${fmtDate(chk.meta?.date || chk.savedAt)}</td>
+      <td><b>${esc(chk.templateName)}</b><br><span class="small">${esc(chk.formatNo)}</span></td>
+      <td>${esc(chk.titleLoc || '-')}<br><span class="small">${chk.meta?.linkedRfi ? 'Linked to: ' + esc(chk.meta?.linkedRfi) : 'Not linked'}</span></td>
+      <td>${esc(chk.preparedBy || '-')}<br><span class="small">Owner: ${esc(chk.createdByDisplay || '-')}</span></td>
+      <td>${badgeForStatus(chk.status || 'Closed')}</td>
+      <td>${chk.defectsCount || 0}</td>
+      <td>${chkScoreBadge}</td>
+      <td><button class="btn btn-secondary" style="padding:6px 10px;font-size:12px;" onclick="openRecord('${chk.id}')">Open</button> ${canDeleteRecord(chk) ? `<button class="btn btn-danger" style="padding:6px 10px;font-size:12px;" onclick="deleteReport('${chk.id}')">Delete</button>` : ''}</td>`;
+    body.appendChild(child);
+  });
+}
+
+// ============================================
+// KPI FILTERING
+// ============================================
+function kpiLabel(type) {
+  const map = {
+    total: 'All RFI', approval: 'Approved + Approved with Comment',
+    pending: 'Pending RFI', approved: 'Approved RFI',
+    approved_comment: 'Approved with Comment', closed: 'Closed RFI', rejected: 'Rejected RFI'
+  };
+  return map[type] || 'Filtered RFI';
+}
+
+function kpiStatusClass(status) {
+  if (status === 'Approved') return 'approved';
+  if (status === 'Approved with Comment') return 'comment';
+  if (status === 'Rejected') return 'rejected';
+  if (status === 'Closed') return 'closed';
+  return 'pending';
+}
+
+function setActiveKpiCard(type) {
+  document.querySelectorAll('.dashboard-grid .stat[data-kpi]').forEach(card => {
+    card.classList.toggle('active-kpi', card.getAttribute('data-kpi') === type);
+  });
+}
+
+function filterKPI(type) {
+  const sourceRows = visibleReports();
+  const rfis = sourceRows.filter(r => r.templateKey === 'rfi');
+  let filtered = [];
+  if (type === 'total') filtered = rfis;
+  if (type === 'approval') filtered = rfis.filter(r => ['Approved', 'Approved with Comment'].includes(r.status));
+  if (type === 'pending') filtered = rfis.filter(r => ['Draft', 'Submitted', 'Under Review'].includes(r.status));
+  if (type === 'approved') filtered = rfis.filter(r => r.status === 'Approved');
+  if (type === 'approved_comment') filtered = rfis.filter(r => r.status === 'Approved with Comment');
+  if (type === 'closed') filtered = rfis.filter(r => r.status === 'Closed');
+  if (type === 'rejected') filtered = rfis.filter(r => r.status === 'Rejected');
+  currentKpiFilter = type;
+  currentKpiRows = filtered.slice();
+  renderKPIResults(filtered, type);
+  setActiveKpiCard(type);
+}
+
+function renderKPIResults(data, type = 'total') {
+  const body = document.getElementById('kpiResultBody');
+  const chip = document.getElementById('kpiActiveFilterChip');
+  const count = document.getElementById('kpiRecordCount');
+  const title = document.getElementById('kpiPanelTitle');
+  const sub = document.getElementById('kpiPanelSub');
+  if (chip) chip.textContent = 'Active Filter: ' + kpiLabel(type);
+  if (count) count.textContent = data.length + (data.length === 1 ? ' record' : ' records');
+  if (title) title.textContent = kpiLabel(type) + ' List';
+  if (sub) sub.textContent = data.length ? 'Showing RFI records that match the selected KPI.' : 'No RFI record matches the selected KPI.';
+  if (!body) return;
+  if (!data.length) {
+    body.innerHTML = '<tr><td colspan="6" class="kpi-empty">No data found for this KPI.</td></tr>';
+    return;
+  }
+  body.innerHTML = data.map(r => `
+    <tr>
+      <td><b>${esc(r.meta?.rfiNo || '-')}</b></td>
+      <td>${esc(r.meta?.project || r.titleLoc || '-')}</td>
+      <td><span class="kpi-status ${kpiStatusClass(r.status || '')}">${esc(r.status || 'Draft')}</span></td>
+      <td>${esc(r.createdByDisplay || '-')}</td>
+      <td>${fmtDate(r.meta?.date || r.savedAt)}</td>
+      <td><button class="btn btn-secondary" style="padding:6px 10px;font-size:12px;" onclick="openRecord('${r.id}')">Open</button></td>
+    </tr>
+  `).join('');
+}
+
+// ============================================
+// PRINT FUNCTIONS
+// ============================================
+function buildPrintableRecordHtml(record) {
+  if (!record) return '';
+  const t = templates[record.templateKey];
+  if (!t) return '';
+  let html = `<div class="print-block"><div class="sheet-shell print-sheet"><div class="sheet-head">`;
+  html += `<div class="org">${esc(appConfig.companyName || 'QA/QC Suite')}</div>`;
+  html += `<div class="dept">QA / QC RECORDS FOR SITE</div>`;
+  html += `<div class="format">Format No. - ${esc(record.formatNo || buildFormatNo(t.formatNo))}</div>`;
+  html += `<div class="title">${esc(t.title)}</div></div>`;
+  html += renderMetaRows(t.metaRows, record.meta || {});
+  (t.sections || []).forEach((sec, si) => {
+    const secData = (record.sections || [])[si] || {};
+    if (sec.type === 'simple_check') html += renderSimpleCheck(sec, secData);
+    if (sec.type === 'checklist') html += renderChecklist(sec, secData);
+    if (sec.type === 'table') html += renderTable(sec, secData);
+    if (sec.type === 'accepted') html += renderAccepted(sec, secData);
+    if (sec.type === 'status') html += renderStatus(sec, secData, si + '_' + record.id);
+    if (sec.type === 'textarea') html += renderTextarea(sec, secData);
+    if (sec.type === 'signatures') html += renderSignatures(sec, secData);
+  });
+  return html + '</div></div>';
+}
+
+function printCurrentRecordWithChecklists() {
+  const rec = currentRecord();
+  if (!rec) { window.print(); return; }
+  const pw = window.open('', '_blank');
+  if (!pw) { toast('⚠️ Allow pop-up to print'); return; }
+  
+  if (activeTemplateKey !== 'rfi') {
+    pw.document.write(`<html><head><title>${esc(rec.templateName || 'Record')}</title>
+    <style>body{font-family:Arial;padding:18px;}.sheet-head{text-align:center;border:1.8px solid #dbe4ee;border-bottom:none;padding:10px 8px;}.org{font-size:19px;font-weight:700;text-transform:uppercase;}.dept{font-size:16px;font-weight:700;}.format{font-size:13px;font-weight:700;}.title{font-size:20px;font-weight:700;text-transform:uppercase;}table{width:100%;border-collapse:collapse;}td,th{border:1px solid #dbe4ee;padding:6px 8px;font-size:13px;}th{background:#f3f3f3;}.label-cell{font-weight:700;background:#fafafa;width:18%;}input,select,textarea{border:none;background:transparent;width:100%;font-size:13px;outline:none;}textarea{min-height:40px;}.check-section-row td{background:#efefef!important;font-weight:700;text-transform:uppercase;}@page{margin:12mm;}</style></head><body>${buildPrintableRecordHtml(rec)}</body></html>`);
+    pw.document.close(); pw.focus(); setTimeout(() => pw.print(), 250);
+    return;
+  }
+
+  const rfiNo = rec.meta?.rfiNo || rec.id || '';
+  const linked = getLinkedChecklistsForRfi(rfiNo);
+  const linkedHtml = linked.length ? linked.map((c, i) => `<div style="margin-top:20px;padding-top:15px;border-top:2px dashed #ccc;"><h3 style="color:#123a66;">Linked Checklist ${i+1}</h3>${buildPrintableRecordHtml(c)}</div>`).join('') : '<p>No linked checklist found.</p>';
+  
+  pw.document.write(`<html><head><title>${esc(rec.meta?.rfiNo || 'RFI')} - Print</title>
+  <style>body{font-family:Arial;padding:18px;}h2{color:#123a66;}.sheet-head{text-align:center;border:1.8px solid #dbe4ee;border-bottom:none;padding:10px 8px;}.org{font-size:19px;font-weight:700;text-transform:uppercase;}.dept{font-size:16px;font-weight:700;}.format{font-size:13px;font-weight:700;}.title{font-size:20px;font-weight:700;text-transform:uppercase;}table{width:100%;border-collapse:collapse;}td,th{border:1px solid #dbe4ee;padding:6px 8px;font-size:13px;}th{background:#f3f3f3;}.label-cell{font-weight:700;background:#fafafa;width:18%;}input,select,textarea{border:none;background:transparent;width:100%;font-size:13px;outline:none;}textarea{min-height:40px;}.check-section-row td{background:#efefef!important;font-weight:700;text-transform:uppercase;}@page{margin:12mm;}</style></head><body><h2>RFI with Attached Checklists</h2>${buildPrintableRecordHtml(rec)}${linkedHtml}</body></html>`);
+  pw.document.close(); pw.focus(); setTimeout(() => pw.print(), 250);
+}
+
+function printFilteredHistory() {
+  const rows = getHistoryFilteredRows();
+  if (!rows.length) { toast('No records to print'); return; }
+  const pw = window.open('', '_blank');
+  if (!pw) { toast('Allow pop-up to print'); return; }
+  let tableHtml = `<table><thead><tr><th>Date</th><th>Format</th><th>Project</th><th>Prepared By</th><th>Status</th><th>Defects</th><th>Compliance</th></tr></thead><tbody>`;
+  rows.forEach(r => {
+    const scoreBadge = typeof r.score === 'number' ? `${r.score}%` : 'N/A';
+    tableHtml += `<tr><td>${fmtDate(r.meta?.date || r.savedAt)}</td><td>${esc(r.templateName)}</td><td>${esc(r.titleLoc || '-')}</td><td>${esc(r.preparedBy || '-')}</td><td>${r.status || 'Draft'}</td><td>${r.defectsCount || 0}</td><td>${scoreBadge}</td></tr>`;
+  });
+  tableHtml += '</tbody></table>';
+  pw.document.write(`<html><head><title>Saved Records</title><style>body{font-family:Arial;padding:20px;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ccc;padding:8px;font-size:12px;}th{background:#f0f0f0;}@page{margin:12mm;}</style></head><body><h1>QA/QC Saved Records</h1><p>Generated: ${new Date().toLocaleString()}</p>${tableHtml}</body></html>`);
+  pw.document.close(); pw.focus(); setTimeout(() => pw.print(), 250);
+}
+
+// ============================================
+// DATA EXPORT / IMPORT
+// ============================================
+function exportData() {
+  const data = JSON.stringify(savedReports, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `QA_QC_Data_${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  toast('📤 Data exported');
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!Array.isArray(data)) throw new Error('Invalid format');
+      savedReports = data;
+      persistDb();
+      toast('📥 Data imported successfully');
+    } catch (err) {
+      toast('❌ Invalid file format');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function exportAllDataJSON() {
+  if (!(currentUser && currentUser.role === 'admin')) { toast('⛔ Admin only'); return; }
+  const payload = { exportedAt: new Date().toISOString(), appConfig, masters, savedReports };
+  const data = JSON.stringify(payload, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `QA_QC_Full_Backup_${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  toast('📤 Full backup exported');
+}
+
+function secureDeleteAllData() {
+  if (!(currentUser && currentUser.role === 'admin')) { toast('⛔ Admin only'); return; }
+  const phrase = prompt('Type DELETE ALL to confirm');
+  if (phrase !== 'DELETE ALL') { toast('Cancelled'); return; }
+  const pwd = prompt('Enter Admin password');
+  if (pwd !== 'Admin123') { toast('Wrong password'); return; }
+  if (!confirm('Final confirmation?')) return;
+  savedReports = [];
+  localStorage.removeItem(STORAGE_KEY);
+  toast('🗑️ All data deleted');
+  renderHistory();
+  updateStats();
+}
+
+function syncWithCloud() {
+  toast('☁️ Sync: Export/Import using the buttons above');
+  document.getElementById('syncStatus').innerText = '💾 ' + (savedReports.length) + ' records';
+}
+
+// ============================================
+// INITIALIZATION
+// ============================================
+function init() {
+  document.getElementById('todayDate').innerText = todayText();
+  loadConfig();
+  loadMasters();
+  loadDb();
+  loadFromServer();  // <-- NEW: Try to sync with server
+  loadSession();
+  applyConfig();
+  populateConfigForm();
+  populateMastersForm();
+  renderCards();
+  renderHistory();
+  updateStats();
+
+  if (currentUser) {
+    document.querySelectorAll('.auth-only').forEach(el => el.classList.remove('hidden'));
+    switchView('dashboard');
+    setActiveKpiCard('total');
+  } else {
+    document.querySelectorAll('.auth-only').forEach(el => el.classList.add('hidden'));
+    switchView('login');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('change', e => {
+  if (e.target.matches('.status-select')) { stylizeStatus(e.target); updateProgress(); }
+});
+document.addEventListener('input', e => {
+  if (e.target.matches('.table-textarea,.plain-textarea,.value-input,.table-input,.sig-input')) updateProgress();
+});
+</script>
+</body>
+</html>
