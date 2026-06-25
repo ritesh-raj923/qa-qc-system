@@ -474,7 +474,7 @@ const STORAGE_KEY = 'qaqc_suite_data_v2';
 const CONFIG_KEY = 'qaqc_suite_config_v2';
 const MASTER_KEY = 'qaqc_suite_masters_v2';
 const SESSION_KEY = 'qaqc_suite_session_v2';
-const API_URL = '/api/data';  // <-- ADDED for server sync
+const API_URL = '/api/data';
 
 let savedReports = [];
 let appConfig = { companyName: 'QA/QC Suite', projectName: 'Project Name', location: 'Location', formatPrefix: 'QA / QC', businessPackage: 'Site Formats' };
@@ -488,6 +488,10 @@ let pendingLinkedRfiNo = null;
 let pendingParentMeta = null;
 let currentKpiFilter = 'total';
 let currentKpiRows = [];
+
+// 🔔 NEW: Variables for notification system
+let lastCheckTimestamp = null;
+let notificationInterval = null;
 
 const users = [
   { u: 'engineer1', p: 'Eng123', role: 'engineer', name: 'Engineer 1' },
@@ -663,6 +667,83 @@ function getProjectDisplay() {
 }
 
 // ============================================
+// 🔔 NEW: NOTIFICATION SYSTEM FOR QA HEAD
+// ============================================
+
+async function checkForNewRFIs() {
+    // Only run if user is logged in and is QA Head
+    if (!currentUser || currentUser.role !== 'qa_head') return;
+
+    try {
+        const response = await fetch(API_URL);
+        if (!response.ok) return;
+        const allData = await response.json();
+
+        // Filter only RFI records
+        const rfiRecords = allData.filter(r => r.templateKey === 'rfi');
+
+        // If no RFIs yet, just set the timestamp and return
+        if (rfiRecords.length === 0) {
+            if (!lastCheckTimestamp) lastCheckTimestamp = new Date();
+            return;
+        }
+
+        // Find the latest savedAt timestamp
+        const latestSaved = rfiRecords.reduce((max, r) => {
+            const d = new Date(r.savedAt);
+            return d > max ? d : max;
+        }, new Date(0));
+
+        // If we have a previous check, see if there's a newer RFI
+        if (lastCheckTimestamp) {
+            const newRFIs = rfiRecords.filter(r => new Date(r.savedAt) > lastCheckTimestamp);
+            if (newRFIs.length > 0) {
+                // Show notifications for new RFIs
+                newRFIs.forEach(rfi => {
+                    const msg = `New RFI #${rfi.meta?.rfiNo || 'Unknown'} submitted by ${rfi.createdByDisplay || 'someone'}`;
+                    // Show browser notification (requires permission)
+                    if (Notification.permission === 'granted') {
+                        new Notification('📢 New RFI Submitted!', {
+                            body: msg,
+                            icon: '🔔'
+                        });
+                    }
+                    // Show toast message
+                    toast('🔔 ' + msg);
+                });
+                // Update stats and history views
+                updateStats();
+                renderHistory();
+            }
+        }
+
+        // Update last check timestamp to the latest saved time
+        lastCheckTimestamp = latestSaved;
+    } catch (e) {
+        // Silently ignore errors (network issues)
+    }
+}
+
+function startNotificationChecker() {
+    // Stop any existing interval
+    if (notificationInterval) clearInterval(notificationInterval);
+
+    // Only start if user is QA Head
+    if (currentUser && currentUser.role === 'qa_head') {
+        // Initialize last check time to current time (so we don't alert on old RFIs)
+        lastCheckTimestamp = new Date();
+        // Check every 10 seconds
+        notificationInterval = setInterval(checkForNewRFIs, 10000);
+        // Request notification permission
+        if (Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+        // Do an immediate check after starting
+        setTimeout(checkForNewRFIs, 500);
+    }
+}
+
+// ============================================
 // STORAGE FUNCTIONS
 // ============================================
 function loadDb() {
@@ -672,9 +753,6 @@ function loadDb() {
   } catch (e) { savedReports = []; }
 }
 
-// ============================================
-// UPDATED persistDb() - Saves to both localStorage AND server
-// ============================================
 function persistDb() {
   // Save to localStorage
   localStorage.setItem(STORAGE_KEY, JSON.stringify(savedReports));
@@ -692,9 +770,6 @@ function persistDb() {
   renderHistory();
 }
 
-// ============================================
-// NEW: loadFromServer() - Loads data from server
-// ============================================
 async function loadFromServer() {
   try {
     const response = await fetch(API_URL);
@@ -777,7 +852,7 @@ function saveSession() {
 }
 
 // ============================================
-// AUTH FUNCTIONS
+// AUTH FUNCTIONS (modified to start/stop notifications)
 // ============================================
 function login() {
   const u = document.getElementById('loginUser').value.trim();
@@ -793,9 +868,19 @@ function login() {
   updateAdminToolsVisibility();
   switchView('dashboard');
   toast('✅ Welcome ' + found.name);
+  
+  // 🔔 START NOTIFICATION CHECKER IF QA HEAD
+  if (currentUser.role === 'qa_head') {
+      startNotificationChecker();
+  }
 }
 
 function logout() {
+  // 🔔 STOP NOTIFICATION CHECKER
+  if (notificationInterval) {
+      clearInterval(notificationInterval);
+      notificationInterval = null;
+  }
   currentUser = null;
   saveSession();
   document.querySelectorAll('.auth-only').forEach(el => el.classList.add('hidden'));
@@ -1840,7 +1925,7 @@ function init() {
   loadConfig();
   loadMasters();
   loadDb();
-  loadFromServer();  // <-- NEW: Try to sync with server
+  loadFromServer();
   loadSession();
   applyConfig();
   populateConfigForm();
@@ -1853,6 +1938,10 @@ function init() {
     document.querySelectorAll('.auth-only').forEach(el => el.classList.remove('hidden'));
     switchView('dashboard');
     setActiveKpiCard('total');
+    // 🔔 START NOTIFICATION CHECKER IF QA HEAD (already logged in on page load)
+    if (currentUser.role === 'qa_head') {
+        startNotificationChecker();
+    }
   } else {
     document.querySelectorAll('.auth-only').forEach(el => el.classList.add('hidden'));
     switchView('login');
