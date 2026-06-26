@@ -54,16 +54,120 @@ body { background: linear-gradient(180deg, #f6f9fc 0%, #eef4fa 100%); color: #11
 header {
   display: flex;
   justify-content: space-between;
-  align-items: end;
+  align-items: center;
   gap: 12px;
   margin-bottom: 18px;
   border-bottom: 2px solid var(--soft);
   padding-bottom: 10px;
+  flex-wrap: wrap;
 }
 header h1 { font-size: 24px; color: var(--blue); }
 header .sub { font-size: 13px; color: #555; }
 .view { display: none; }
 .view.active { display: block; }
+
+/* ===== NOTIFICATION BELL ===== */
+.notif-container {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+.notif-bell {
+  font-size: 24px;
+  position: relative;
+  padding: 4px 8px;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+.notif-bell:hover {
+  background: rgba(255,255,255,0.1);
+}
+.notif-badge {
+  position: absolute;
+  top: -4px;
+  right: -2px;
+  background: #d64545;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  border: 2px solid var(--blue2);
+}
+.notif-badge.hidden { display: none; }
+
+/* ===== NOTIFICATION DROPDOWN ===== */
+.notif-dropdown {
+  position: absolute;
+  top: 44px;
+  right: 0;
+  width: 380px;
+  max-height: 420px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+  display: none;
+  z-index: 999;
+  padding: 0;
+}
+.notif-dropdown.open { display: block; }
+.notif-dropdown-header {
+  padding: 12px 16px;
+  font-weight: 700;
+  border-bottom: 1px solid var(--line);
+  color: var(--blue);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.notif-dropdown-header .mark-all {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--blue);
+  cursor: pointer;
+  text-decoration: underline;
+}
+.notif-item {
+  padding: 10px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  transition: background 0.15s;
+  cursor: default;
+}
+.notif-item:hover { background: #f8faff; }
+.notif-item.unread { background: #f0f6ff; }
+.notif-item .notif-icon { font-size: 18px; flex-shrink: 0; margin-top: 2px; }
+.notif-item .notif-body { flex: 1; font-size: 13px; color: #222; line-height: 1.4; }
+.notif-item .notif-body .notif-time { font-size: 11px; color: #888; display: block; margin-top: 4px; }
+.notif-item .notif-body .notif-rfi-link {
+  color: var(--blue);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.notif-empty {
+  padding: 30px 16px;
+  text-align: center;
+  color: #888;
+  font-size: 14px;
+}
+.notif-mark-read {
+  font-size: 11px;
+  color: var(--blue);
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-top: 2px;
+  text-decoration: underline;
+}
 
 .dashboard-grid {
   display: grid;
@@ -236,6 +340,7 @@ header .sub { font-size: 13px; color: #555; }
   body { display: block; }
   .sidebar { position: relative; width: 100%; height: auto; }
   .main { margin: 0; width: 100%; }
+  .notif-dropdown { width: 300px; right: -10px; }
 }
 @media print {
   body { background: #fff; display: block; }
@@ -269,6 +374,18 @@ header .sub { font-size: 13px; color: #555; }
     </div>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
       <span class="badge info" id="viewBadge">Not Logged In</span>
+      <!-- NOTIFICATION BELL -->
+      <div class="notif-container" id="notifContainer" style="display:none;">
+        <div class="notif-bell" id="notifBell" onclick="toggleNotifications()">🔔</div>
+        <div class="notif-badge hidden" id="notifBadge">0</div>
+        <div class="notif-dropdown" id="notifDropdown">
+          <div class="notif-dropdown-header">
+            <span>🔔 Notifications</span>
+            <span class="mark-all" onclick="markAllNotificationsRead()">Mark all as read</span>
+          </div>
+          <div id="notifList"></div>
+        </div>
+      </div>
       <div class="small" id="todayDate"></div>
     </div>
   </header>
@@ -291,7 +408,11 @@ header .sub { font-size: 13px; color: #555; }
         </div>
         <div class="note" style="margin-top:12px; line-height:1.8;">
           <b>Demo Users:</b><br>
-          👷 Engineer: engineer1 / Eng123<br>
+          👷 Engineer 1: engineer1 / Eng123<br>
+          👷 Engineer 2: engineer2 / Eng456<br>
+          👷 Engineer 3: engineer3 / Eng789<br>
+          👷 Engineer 4: engineer4 / Eng000<br>
+          👷 Engineer 5: engineer5 / Eng999<br>
           👔 QA Head: qahead / Head123<br>
           📊 Manager: manager / Mgr123<br>
           🔧 Admin: admin / Admin123<br>
@@ -472,6 +593,7 @@ const STORAGE_KEY = 'qaqc_suite_data_v2';
 const CONFIG_KEY = 'qaqc_suite_config_v2';
 const MASTER_KEY = 'qaqc_suite_masters_v2';
 const SESSION_KEY = 'qaqc_suite_session_v2';
+const NOTIFICATION_KEY = 'qaqc_suite_notifications_v2';
 const API_URL = '/api/data';
 
 let savedReports = [];
@@ -487,18 +609,30 @@ let pendingParentMeta = null;
 let currentKpiFilter = 'total';
 let currentKpiRows = [];
 
-// Variables for notification system
-let lastCheckTimestamp = null;
+// ============================================
+// NOTIFICATIONS (Persistent)
+// ============================================
+let notifications = [];
 let notificationInterval = null;
 
+// ============================================
+// USERS (5 Engineers + QA Head + others)
+// ============================================
 const users = [
   { u: 'engineer1', p: 'Eng123', role: 'engineer', name: 'Engineer 1' },
+  { u: 'engineer2', p: 'Eng456', role: 'engineer', name: 'Engineer 2' },
+  { u: 'engineer3', p: 'Eng789', role: 'engineer', name: 'Engineer 3' },
+  { u: 'engineer4', p: 'Eng000', role: 'engineer', name: 'Engineer 4' },
+  { u: 'engineer5', p: 'Eng999', role: 'engineer', name: 'Engineer 5' },
   { u: 'qahead', p: 'Head123', role: 'qa_head', name: 'QA Head' },
   { u: 'manager', p: 'Mgr123', role: 'manager', name: 'Project Manager' },
   { u: 'admin', p: 'Admin123', role: 'admin', name: 'Admin' },
   { u: 'consultant', p: 'View123', role: 'consultant', name: 'Consultant' }
 ];
 
+// ============================================
+// TEMPLATES (unchanged)
+// ============================================
 const templates = {
   rfi: {
     formatNo: 'QA / QC / SITE / 01',
@@ -614,6 +748,16 @@ function fmtDate(v) {
   return String(d) === 'Invalid Date' ? String(v) : d.toLocaleDateString('en-GB');
 }
 
+function fmtTimeAgo(dateStr) {
+  const d = new Date(dateStr);
+  const now = new Date();
+  const diff = Math.floor((now - d) / 1000);
+  if (diff < 60) return diff + 's ago';
+  if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+  return Math.floor(diff/86400) + 'd ago';
+}
+
 function todayText() {
   return new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 }
@@ -665,80 +809,144 @@ function getProjectDisplay() {
 }
 
 // ============================================
-// NOTIFICATION SYSTEM FOR QA HEAD
+// NOTIFICATION FUNCTIONS
 // ============================================
 
-async function checkForNewRFIs() {
-    // Only run if user is logged in and is QA Head
-    if (!currentUser || currentUser.role !== 'qa_head') return;
-
-    try {
-        const response = await fetch(API_URL);
-        if (!response.ok) return;
-        const allData = await response.json();
-
-        // Filter only RFI records
-        const rfiRecords = allData.filter(r => r.templateKey === 'rfi');
-
-        // If no RFIs yet, just set the timestamp and return
-        if (rfiRecords.length === 0) {
-            if (!lastCheckTimestamp) lastCheckTimestamp = new Date();
-            return;
-        }
-
-        // Find the latest savedAt timestamp
-        const latestSaved = rfiRecords.reduce((max, r) => {
-            const d = new Date(r.savedAt);
-            return d > max ? d : max;
-        }, new Date(0));
-
-        // If we have a previous check, see if there's a newer RFI
-        if (lastCheckTimestamp) {
-            const newRFIs = rfiRecords.filter(r => new Date(r.savedAt) > lastCheckTimestamp);
-            if (newRFIs.length > 0) {
-                // Show notifications for new RFIs
-                newRFIs.forEach(rfi => {
-                    const msg = `New RFI #${rfi.meta?.rfiNo || 'Unknown'} submitted by ${rfi.createdByDisplay || 'someone'}`;
-                    // Show browser notification (requires permission)
-                    if (Notification.permission === 'granted') {
-                        new Notification('📢 New RFI Submitted!', {
-                            body: msg,
-                            icon: '🔔'
-                        });
-                    }
-                    // Show toast message
-                    toast('🔔 ' + msg);
-                });
-                // Update stats and history views
-                updateStats();
-                renderHistory();
-            }
-        }
-
-        // Update last check timestamp to the latest saved time
-        lastCheckTimestamp = latestSaved;
-    } catch (e) {
-        // Silently ignore errors (network issues)
-    }
+function loadNotifications() {
+  try {
+    const data = JSON.parse(localStorage.getItem(NOTIFICATION_KEY) || '[]');
+    notifications = data;
+  } catch (e) { notifications = []; }
 }
 
-function startNotificationChecker() {
-    // Stop any existing interval
-    if (notificationInterval) clearInterval(notificationInterval);
+function saveNotifications() {
+  localStorage.setItem(NOTIFICATION_KEY, JSON.stringify(notifications));
+  // Also sync to server via persistDb
+  updateNotificationUI();
+}
 
-    // Only start if user is QA Head
-    if (currentUser && currentUser.role === 'qa_head') {
-        // Initialize last check time to current time (so we don't alert on old RFIs)
-        lastCheckTimestamp = new Date();
-        // Check every 10 seconds
-        notificationInterval = setInterval(checkForNewRFIs, 10000);
-        // Request notification permission
-        if (Notification.permission === 'default') {
-            Notification.requestPermission();
-        }
-        // Do an immediate check after starting
-        setTimeout(checkForNewRFIs, 500);
+function sendNotification(recipientUsername, message, type, rfiId, rfiNo, senderName) {
+  const notif = {
+    id: 'notif_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+    recipientUsername: recipientUsername,
+    message: message,
+    type: type, // 'new_rfi', 'approved', 'rejected', 'under_review', 'approved_comment'
+    rfiId: rfiId,
+    rfiNo: rfiNo || 'Unknown',
+    senderName: senderName || currentUser?.display || 'System',
+    read: false,
+    createdAt: new Date().toISOString()
+  };
+  notifications.unshift(notif);
+  // Keep only last 200 notifications
+  if (notifications.length > 200) notifications = notifications.slice(0, 200);
+  saveNotifications();
+  // If recipient is current user, show toast and desktop notification
+  if (currentUser && currentUser.username === recipientUsername) {
+    const iconMap = {
+      'new_rfi': '🔔',
+      'approved': '✅',
+      'rejected': '❌',
+      'under_review': '🔍',
+      'approved_comment': '📝'
+    };
+    const icon = iconMap[type] || '📢';
+    toast(icon + ' ' + message);
+    if (Notification.permission === 'granted') {
+      new Notification(icon + ' ' + message, { body: 'Tap to open', icon: '🔔' });
     }
+  }
+  // Update UI if logged in
+  if (currentUser && currentUser.username === recipientUsername) {
+    updateNotificationUI();
+  }
+}
+
+function getNotificationsForUser(username) {
+  return notifications.filter(n => n.recipientUsername === username);
+}
+
+function getUnreadCount(username) {
+  return notifications.filter(n => n.recipientUsername === username && !n.read).length;
+}
+
+function markNotificationRead(notifId) {
+  const notif = notifications.find(n => n.id === notifId);
+  if (notif) {
+    notif.read = true;
+    saveNotifications();
+    updateNotificationUI();
+  }
+}
+
+function markAllNotificationsRead() {
+  const userNotifs = notifications.filter(n => n.recipientUsername === currentUser?.username);
+  userNotifs.forEach(n => n.read = true);
+  saveNotifications();
+  updateNotificationUI();
+  toast('✅ All notifications marked as read');
+}
+
+function toggleNotifications() {
+  const dropdown = document.getElementById('notifDropdown');
+  dropdown.classList.toggle('open');
+  if (dropdown.classList.contains('open')) {
+    renderNotificationList();
+  }
+}
+
+function updateNotificationUI() {
+  if (!currentUser) {
+    document.getElementById('notifContainer').style.display = 'none';
+    return;
+  }
+  document.getElementById('notifContainer').style.display = 'block';
+  const count = getUnreadCount(currentUser.username);
+  const badge = document.getElementById('notifBadge');
+  if (count > 0) {
+    badge.textContent = count > 99 ? '99+' : count;
+    badge.classList.remove('hidden');
+  } else {
+    badge.classList.add('hidden');
+  }
+}
+
+function renderNotificationList() {
+  const list = document.getElementById('notifList');
+  const userNotifs = getNotificationsForUser(currentUser.username);
+  if (userNotifs.length === 0) {
+    list.innerHTML = '<div class="notif-empty">✨ No notifications yet</div>';
+    return;
+  }
+  list.innerHTML = userNotifs.map(n => `
+    <div class="notif-item ${n.read ? '' : 'unread'}" onclick="handleNotificationClick('${n.id}', '${n.rfiId}')">
+      <div class="notif-icon">${getNotifIcon(n.type)}</div>
+      <div class="notif-body">
+        <div>${esc(n.message)}</div>
+        <span class="notif-time">${fmtTimeAgo(n.createdAt)}</span>
+      </div>
+      ${!n.read ? `<span class="notif-mark-read" onclick="event.stopPropagation();markNotificationRead('${n.id}')">✔</span>` : ''}
+    </div>
+  `).join('');
+}
+
+function getNotifIcon(type) {
+  const map = {
+    'new_rfi': '🔔',
+    'approved': '✅',
+    'rejected': '❌',
+    'under_review': '🔍',
+    'approved_comment': '📝'
+  };
+  return map[type] || '📢';
+}
+
+function handleNotificationClick(notifId, rfiId) {
+  markNotificationRead(notifId);
+  document.getElementById('notifDropdown').classList.remove('open');
+  if (rfiId) {
+    openRecord(rfiId);
+  }
 }
 
 // ============================================
@@ -749,23 +957,27 @@ function loadDb() {
     const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
     savedReports = data;
   } catch (e) { savedReports = []; }
+  loadNotifications();
 }
 
 function persistDb() {
-  // Save to localStorage
+  // Save reports
   localStorage.setItem(STORAGE_KEY, JSON.stringify(savedReports));
+  // Save notifications
+  localStorage.setItem(NOTIFICATION_KEY, JSON.stringify(notifications));
   
   // Save to server (if available)
   try {
     fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(savedReports)
+      body: JSON.stringify({ reports: savedReports, notifications: notifications })
     }).catch(() => {});
   } catch (e) {}
   
   updateStats();
   renderHistory();
+  updateNotificationUI();
 }
 
 async function loadFromServer() {
@@ -773,16 +985,20 @@ async function loadFromServer() {
     const response = await fetch(API_URL);
     if (response.ok) {
       const data = await response.json();
-      if (data.length > 0) {
-        savedReports = data;
+      if (data.reports && data.reports.length > 0) {
+        savedReports = data.reports;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(savedReports));
-        renderHistory();
-        updateStats();
-        toast('✅ Synced with server');
       }
+      if (data.notifications && data.notifications.length > 0) {
+        notifications = data.notifications;
+        localStorage.setItem(NOTIFICATION_KEY, JSON.stringify(notifications));
+      }
+      renderHistory();
+      updateStats();
+      updateNotificationUI();
+      toast('✅ Synced with server');
     }
   } catch (e) {
-    // Server offline - use local data
     console.log('Server offline, using local data');
   }
 }
@@ -850,7 +1066,7 @@ function saveSession() {
 }
 
 // ============================================
-// AUTH FUNCTIONS (modified to start/stop notifications)
+// AUTH FUNCTIONS
 // ============================================
 function login() {
   const u = document.getElementById('loginUser').value.trim();
@@ -864,24 +1080,21 @@ function login() {
   renderHistory();
   updateStats();
   updateAdminToolsVisibility();
+  updateNotificationUI();
   switchView('dashboard');
   toast('✅ Welcome ' + found.name);
-  
-  // START NOTIFICATION CHECKER IF QA HEAD
-  if (currentUser.role === 'qa_head') {
-      startNotificationChecker();
+  // Show unread count
+  const unread = getUnreadCount(currentUser.username);
+  if (unread > 0) {
+    toast('🔔 You have ' + unread + ' unread notification' + (unread > 1 ? 's' : ''));
   }
 }
 
 function logout() {
-  // STOP NOTIFICATION CHECKER
-  if (notificationInterval) {
-      clearInterval(notificationInterval);
-      notificationInterval = null;
-  }
   currentUser = null;
   saveSession();
   document.querySelectorAll('.auth-only').forEach(el => el.classList.add('hidden'));
+  document.getElementById('notifContainer').style.display = 'none';
   switchView('login');
   toast('👋 Logged out');
 }
@@ -956,6 +1169,7 @@ function switchView(view) {
     document.getElementById('appTitle').innerText = 'QA/QC Inspection Suite';
     document.getElementById('appSub').innerText = 'Secure Access';
   }
+  updateNotificationUI();
 }
 
 function backFromForm() {
@@ -995,7 +1209,7 @@ function renderCards() {
 }
 
 // ============================================
-// FORM RENDERING
+// FORM RENDERING (unchanged - kept as is)
 // ============================================
 function makeInput(id, value, type = 'text', options = []) {
   if (type === 'select') {
@@ -1295,7 +1509,6 @@ function saveReport(ev) {
     audit: (existing?.audit || []).concat([getAuditNow(existing ? 'Updated' : 'Created', document.getElementById('wfComment')?.value.trim() || '')])
   };
   
-  // Calculate score
   let yes = 0, no = 0;
   sections.forEach(sec => {
     if (sec.type === 'checklist' || sec.type === 'simple_check') {
@@ -1352,7 +1565,6 @@ function updateWorkflowButtons(rec) {
   document.getElementById('btnApproveComment').classList.toggle('hidden', !(canApprove() && ['Submitted', 'Under Review'].includes(status)));
   document.getElementById('btnReject').classList.toggle('hidden', !(canApprove() && ['Submitted', 'Under Review'].includes(status)));
 
-  // Update linked checklists display
   const rfiNo = rec?.meta?.rfiNo || rec?.id || '';
   const linked = getLinkedChecklistsForRfi(rfiNo);
   const list = document.getElementById('relatedChecklistList');
@@ -1379,8 +1591,9 @@ function setChecklistButtonsState(rec) {
 }
 
 // ============================================
-// RFI WORKFLOW ACTIONS
+// RFI WORKFLOW ACTIONS (with notifications)
 // ============================================
+
 function submitRFI() {
   const rec = currentRecord();
   if (!rec) { toast('⚠️ Save RFI first'); return; }
@@ -1393,6 +1606,14 @@ function submitRFI() {
   updateWorkflowButtons(rec);
   setChecklistButtonsState(rec);
   toast('📤 RFI submitted successfully');
+  
+  // 🔔 NOTIFICATION: Engineer submits RFI → Notify QA Head
+  const qaHeadUser = users.find(u => u.role === 'qa_head');
+  if (qaHeadUser) {
+    const rfiNo = rec.meta?.rfiNo || rec.id || 'Unknown';
+    const msg = `New RFI #${rfiNo} submitted by ${currentUser.display}`;
+    sendNotification(qaHeadUser.u, msg, 'new_rfi', rec.id, rfiNo, currentUser.display);
+  }
 }
 
 function markUnderReview() {
@@ -1406,6 +1627,13 @@ function markUnderReview() {
   persistDb();
   updateWorkflowButtons(rec);
   toast(`🔍 RFI under review${linkedCount ? ` with ${linkedCount} linked checklist(s)` : ''}`);
+  
+  // 🔔 NOTIFICATION: QA Head marks Under Review → Notify Engineer who created it
+  if (rec.createdBy) {
+    const rfiNo = rec.meta?.rfiNo || rec.id || 'Unknown';
+    const msg = `Your RFI #${rfiNo} is now Under Review by ${currentUser.display}`;
+    sendNotification(rec.createdBy, msg, 'under_review', rec.id, rfiNo, currentUser.display);
+  }
 }
 
 function approveRFI() {
@@ -1421,6 +1649,13 @@ function approveRFI() {
   persistDb();
   updateWorkflowButtons(rec);
   toast(`✅ RFI approved${linkedCount ? ` with ${linkedCount} linked checklist(s)` : ''}`);
+  
+  // 🔔 NOTIFICATION: QA Head approves → Notify Engineer who created it
+  if (rec.createdBy) {
+    const rfiNo = rec.meta?.rfiNo || rec.id || 'Unknown';
+    const msg = `Your RFI #${rfiNo} has been Approved by ${currentUser.display}`;
+    sendNotification(rec.createdBy, msg, 'approved', rec.id, rfiNo, currentUser.display);
+  }
 }
 
 function approveWithCommentRFI() {
@@ -1438,6 +1673,13 @@ function approveWithCommentRFI() {
   persistDb();
   updateWorkflowButtons(rec);
   toast(`📝 RFI approved with comment${linkedCount ? ` and ${linkedCount} linked checklist(s)` : ''}`);
+  
+  // 🔔 NOTIFICATION: QA Head approves with comment → Notify Engineer who created it
+  if (rec.createdBy) {
+    const rfiNo = rec.meta?.rfiNo || rec.id || 'Unknown';
+    const msg = `Your RFI #${rfiNo} has been Approved with Comment by ${currentUser.display}`;
+    sendNotification(rec.createdBy, msg, 'approved_comment', rec.id, rfiNo, currentUser.display);
+  }
 }
 
 function rejectRFI() {
@@ -1455,6 +1697,13 @@ function rejectRFI() {
   persistDb();
   updateWorkflowButtons(rec);
   toast(`❌ RFI rejected${linkedCount ? ` with ${linkedCount} linked checklist(s)` : ''}`);
+  
+  // 🔔 NOTIFICATION: QA Head rejects → Notify Engineer who created it
+  if (rec.createdBy) {
+    const rfiNo = rec.meta?.rfiNo || rec.id || 'Unknown';
+    const msg = `Your RFI #${rfiNo} has been Rejected by ${currentUser.display}. Reason: ${c.substring(0, 60)}${c.length > 60 ? '...' : ''}`;
+    sendNotification(rec.createdBy, msg, 'rejected', rec.id, rfiNo, currentUser.display);
+  }
 }
 
 function applyLinkedChecklistAction(parentRec, nextStatus, auditAction) {
@@ -1576,7 +1825,6 @@ function updateStats() {
   const rows = visibleReports();
   const rfis = rows.filter(r => r.templateKey === 'rfi');
   
-  // Merge Closed into Approved
   const approvedOnly = rfis.filter(r => r.status === 'Approved' || r.status === 'Closed').length;
   const approvedWithComment = rfis.filter(r => r.status === 'Approved with Comment').length;
   const allApproved = approvedOnly + approvedWithComment;
@@ -1591,6 +1839,7 @@ function updateStats() {
   document.getElementById('rejectedRfi').innerText = rfis.filter(r => r.status === 'Rejected').length;
 
   if (currentKpiFilter) filterKPI(currentKpiFilter);
+  updateNotificationUI();
 }
 
 function getSavedRecordFilterState() {
@@ -1642,7 +1891,6 @@ function renderHistory() {
     return;
   }
 
-  // Group RFIs with their linked checklists
   const rfiRows = rows.filter(r => r.templateKey === 'rfi');
   const checklistRows = rows.filter(r => r.templateKey !== 'rfi');
   const checklistMap = new Map();
@@ -1688,7 +1936,6 @@ function renderHistory() {
     });
   });
 
-  // Show unlinked checklists
   checklistRows.filter(chk => !checklistMap.get(chk.meta?.linkedRfi || '__unlinked__')?.includes(chk)).forEach(chk => {
     const chkScoreBadge = typeof chk.score === 'number' ? `<span class="badge ${chk.score < 60 ? 'bad' : chk.score < 85 ? 'mid' : 'ok'}">${chk.score}%</span>` : '<span class="badge mid">N/A</span>';
     const chkStatusDisplay = chk.status === 'Closed' ? 'Approved' : chk.status;
@@ -1876,7 +2123,7 @@ function importData(event) {
 
 function exportAllDataJSON() {
   if (!(currentUser && currentUser.role === 'admin')) { toast('⛔ Admin only'); return; }
-  const payload = { exportedAt: new Date().toISOString(), appConfig, masters, savedReports };
+  const payload = { exportedAt: new Date().toISOString(), appConfig, masters, savedReports, notifications };
   const data = JSON.stringify(payload, null, 2);
   const blob = new Blob([data], { type: 'application/json' });
   const a = document.createElement('a');
@@ -1896,10 +2143,13 @@ function secureDeleteAllData() {
   if (pwd !== 'Admin123') { toast('Wrong password'); return; }
   if (!confirm('Final confirmation?')) return;
   savedReports = [];
+  notifications = [];
   localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(NOTIFICATION_KEY);
   toast('🗑️ All data deleted');
   renderHistory();
   updateStats();
+  updateNotificationUI();
 }
 
 function syncWithCloud() {
@@ -1923,13 +2173,15 @@ function init() {
   renderCards();
   renderHistory();
   updateStats();
+  updateNotificationUI();
 
   if (currentUser) {
     document.querySelectorAll('.auth-only').forEach(el => el.classList.remove('hidden'));
     switchView('dashboard');
     setActiveKpiCard('total');
-    if (currentUser.role === 'qa_head') {
-        startNotificationChecker();
+    const unread = getUnreadCount(currentUser.username);
+    if (unread > 0) {
+      setTimeout(() => toast('🔔 You have ' + unread + ' unread notification' + (unread > 1 ? 's' : '')), 500);
     }
   } else {
     document.querySelectorAll('.auth-only').forEach(el => el.classList.add('hidden'));
@@ -1943,6 +2195,14 @@ document.addEventListener('change', e => {
 });
 document.addEventListener('input', e => {
   if (e.target.matches('.table-textarea,.plain-textarea,.value-input,.table-input,.sig-input')) updateProgress();
+});
+
+// Click outside notification dropdown to close it
+document.addEventListener('click', function(e) {
+  const container = document.getElementById('notifContainer');
+  if (container && !container.contains(e.target)) {
+    document.getElementById('notifDropdown').classList.remove('open');
+  }
 });
 </script>
 </body>
