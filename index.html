@@ -261,7 +261,7 @@ header .sub { font-size: 13px; color: #555; }
 .sheet-shell { padding: 22px; }
 .sheet-head { text-align: center; border: 1.8px solid var(--line); border-bottom: none; padding: 10px 8px; }
 .sheet-head .org { font-size: 19px; font-weight: 700; text-transform: uppercase; }
-.sheet-head .dept { font-size: 16px; font-weight: 700; margin-top: 2px; }
+.sheet-head .dept { font-size: 14px; font-weight: 700; margin-top: 2px; }
 .sheet-head .format { font-size: 13px; margin-top: 4px; font-weight: 700; }
 .sheet-head .title { font-size: 20px; font-weight: 700; margin-top: 8px; text-transform: uppercase; }
 .sheet-table { border: 1.8px solid var(--line); margin-bottom: 14px; }
@@ -547,7 +547,7 @@ header .sub { font-size: 13px; color: #555; }
         <button id="btnApproveComment" class="btn btn-secondary hidden" onclick="approveWithCommentRecord()" type="button" style="margin-left:8px;">📝 Approve w/ Comment</button>
         <button id="btnReject" class="btn btn-danger hidden" onclick="rejectRecord()" type="button" style="margin-left:8px;">❌ Reject</button>
         <button id="btnClose" class="btn btn-primary hidden" onclick="closeRecord()" type="button" style="margin-left:8px;">🔒 Close</button>
-        <!-- 🆕 Raise NCR Button – independent of workflow -->
+        <!-- 🆕 Raise NCR Button -->
         <button id="btnRaiseNCR" class="btn btn-secondary hidden" onclick="raiseNCRFromRFI()" type="button" style="margin-left:8px;">📋 Raise NCR</button>
       </div>
       <div class="progressbox">
@@ -581,7 +581,7 @@ header .sub { font-size: 13px; color: #555; }
       <div class="sheet-shell">
         <div class="sheet-head">
           <div class="org" id="sheetOrg">QA/QC Suite</div>
-          <div class="dept">QA / QC RECORDS</div>
+          <div class="dept" id="sheetDept">QA / QC RECORDS FOR SITE</div>
           <div class="format" id="fmtNo">Format No. - QA / QC / SITE / 01</div>
           <div class="title" id="sheetTitle">REQUEST FOR INSPECTION</div>
         </div>
@@ -635,13 +635,14 @@ const users = [
 ];
 
 // ============================================
-// TEMPLATES (RFI, Checklists, NCR, IMIR)
+// TEMPLATES (with exact Excel replication)
 // ============================================
 const templates = {
   rfi: {
     formatNo: 'QA / QC / SITE / 01',
     menuTitle: 'RFI',
     title: 'REQUEST FOR INSPECTION',
+    dept: 'QA / QC RECORDS FOR SITE',
     summary: 'Standard RFI with workflow and approvals.',
     metaRows: [
       [{ l: 'Project :-', k: 'project', d: 'Project Name' }, { l: 'RFI No.:', k: 'rfiNo' }],
@@ -669,6 +670,7 @@ const templates = {
     formatNo: 'QA / QC / SITE / 02',
     menuTitle: 'Brick Masonry',
     title: 'CHECK LIST FOR BRICK MASONRY WORK',
+    dept: 'QA / QC RECORDS FOR SITE',
     summary: 'Brick masonry checklist with manual fields and linked RFI support.',
     metaRows: [
       [{ l: 'Linked RFI No :', k: 'linkedRfi', t: 'select', options: [] }],
@@ -692,6 +694,7 @@ const templates = {
     formatNo: 'QA / QC / SITE / 04',
     menuTitle: 'Plaster Work',
     title: 'CHECK LIST FOR PLASTER WORK',
+    dept: 'QA / QC RECORDS FOR SITE',
     summary: 'Plaster work checklist with manual fields and linked RFI support.',
     metaRows: [
       [{ l: 'Linked RFI No :', k: 'linkedRfi', t: 'select', options: [] }],
@@ -715,6 +718,7 @@ const templates = {
     formatNo: 'QA / QC / SITE / 09',
     menuTitle: 'Concrete Pour Record',
     title: 'CONCRETE POUR RECORD',
+    dept: 'QA / QC RECORDS FOR SITE',
     summary: 'Concrete pour record sheet with manual fields and linked RFI support.',
     metaRows: [
       [{ l: 'Linked RFI No :', k: 'linkedRfi', t: 'select', options: [] }],
@@ -730,11 +734,12 @@ const templates = {
       { type: 'signatures', title: 'Signatures', roles: ['Contractor Representative', 'Client Representative'] }
     ]
   },
-  // ===== NCR =====
+  // ===== NCR (exact replica) =====
   ncr: {
     formatNo: 'ADANI/Q/F-09 Rev 0',
     menuTitle: 'NCR',
     title: 'NON CONFORMANCE REPORT',
+    dept: 'Issued by QA/FQA to respective agency',
     summary: 'Non‑Conformance Report (NCR) issued by QA/FQA to respective agency.',
     metaRows: [
       [{ l: 'NCR No.:', k: 'ncrNo' }, { l: 'Category:', k: 'category' }],
@@ -765,11 +770,12 @@ const templates = {
       { type: 'signatures', title: 'Disposal Approved by', roles: ['Name', 'Signature', 'Date'] }
     ]
   },
-  // ===== IMIR (Material Approval) =====
+  // ===== IMIR (exact replica) =====
   imir: {
     formatNo: 'QA/QC/IMIR-01',
     menuTitle: 'IMIR',
     title: 'MATERIAL APPROVAL',
+    dept: '',
     summary: 'Material Approval Submittal (IMIR) for client approval.',
     metaRows: [
       [{ l: 'Client:', k: 'client', d: 'M/s Adani Entreprises Ltd' }, { l: 'Package/System:', k: 'package' }],
@@ -1169,7 +1175,7 @@ function renderCards() {
 }
 
 // ============================================
-// FORM RENDERING (Extended for NCR & IMIR)
+// FORM RENDERING (Supports NCR & IMIR exactly)
 // ============================================
 function makeInput(id, value, type = 'text', options = []) {
   if (type === 'select') {
@@ -1539,7 +1545,7 @@ function updateWorkflowButtons(rec) {
   const showReject = canApprove() && ['Submitted', 'Under Review'].includes(status);
   const showClose = canApprove() && ['Submitted', 'Under Review', 'Approved', 'Approved with Comment'].includes(status) && isNcr;
 
-  // 🆕 Raise NCR button: visible only when viewing an RFI AND user is QA Head or Admin
+  // Raise NCR button: visible only when viewing an RFI and user is QA Head/Admin
   const btnRaiseNCR = document.getElementById('btnRaiseNCR');
   if (btnRaiseNCR) {
     btnRaiseNCR.classList.toggle('hidden', !(isRfi && (currentUser?.role === 'qa_head' || currentUser?.role === 'admin')));
@@ -1563,23 +1569,15 @@ function setChecklistButtonsState(rec) {
 }
 
 // ============================================
-// 🆕 RAISE NCR FROM RFI (INDEPENDENT OF WORKFLOW)
+// 🆕 RAISE NCR FROM RFI
 // ============================================
 function raiseNCRFromRFI() {
-  // Get the current RFI record
   const rfi = currentRecord();
-  if (!rfi) {
-    toast('⚠️ No RFI found to raise NCR from.');
-    return;
-  }
-
-  // Check if user is QA Head or Admin
+  if (!rfi) { toast('⚠️ No RFI found.'); return; }
   if (!currentUser || (currentUser.role !== 'qa_head' && currentUser.role !== 'admin')) {
     toast('⛔ Only QA Head or Admin can raise NCR.');
     return;
   }
-
-  // Pre-fill NCR meta data from RFI
   const rfiMeta = rfi.meta || {};
   const ncrMeta = {
     ncrNo: '',
@@ -1598,8 +1596,6 @@ function raiseNCRFromRFI() {
     materialService: '',
     raisedFromRfi: rfiMeta.rfiNo || rfi.id || ''
   };
-
-  // Create a new NCR record
   const ncrId = 'rep_' + Date.now();
   const newNCR = {
     id: ncrId,
@@ -1622,14 +1618,9 @@ function raiseNCRFromRFI() {
     savedAt: new Date().toISOString(),
     audit: [getAuditNow('Created from RFI #' + (rfiMeta.rfiNo || rfi.id || ''), '')]
   };
-
-  // Add the new NCR to savedReports
   savedReports.unshift(newNCR);
   persistDb();
-
-  toast('📋 NCR created from RFI #' + (rfiMeta.rfiNo || rfi.id || '') + ' – fill in the details and submit.');
-
-  // Navigate to the NCR form
+  toast('📋 NCR created from RFI #' + (rfiMeta.rfiNo || rfi.id || ''));
   openTemplate('ncr', ncrId);
 }
 
@@ -1652,8 +1643,7 @@ function submitRecord() {
     const isNcr = rec.templateKey === 'ncr';
     const docNo = isNcr ? (rec.meta?.ncrNo || rec.id || 'Unknown') : (rec.meta?.rfiNo || rec.id || 'Unknown');
     const typeLabel = isNcr ? 'NCR' : (rec.templateKey === 'imir' ? 'IMIR' : 'RFI');
-    const msg = `New ${typeLabel} #${docNo} submitted by ${currentUser.display}`;
-    sendNotification(qaHeadUser.u, msg, isNcr ? 'new_ncr' : 'new_rfi', rec.id, docNo, currentUser.display);
+    sendNotification(qaHeadUser.u, `New ${typeLabel} #${docNo} submitted by ${currentUser.display}`, isNcr ? 'new_ncr' : 'new_rfi', rec.id, docNo, currentUser.display);
   }
 }
 
@@ -1665,7 +1655,7 @@ function markUnderReview() {
   rec.audit.push(getAuditNow('Marked Under Review', rec.comment));
   rec.savedAt = new Date().toISOString();
   persistDb(); updateWorkflowButtons(rec);
-  toast(`🔍 Under review`);
+  toast('🔍 Under review');
   if (rec.createdBy) {
     const docNo = rec.meta?.rfiNo || rec.id || 'Unknown';
     sendNotification(rec.createdBy, `Your RFI #${docNo} is now Under Review by ${currentUser.display}`, 'under_review', rec.id, docNo, currentUser.display);
@@ -1682,7 +1672,7 @@ function approveRecord() {
   rec.audit.push(getAuditNow('Approved', rec.comment));
   rec.savedAt = new Date().toISOString();
   persistDb(); updateWorkflowButtons(rec);
-  toast(`✅ Approved`);
+  toast('✅ Approved');
   if (rec.createdBy) {
     const docNo = rec.meta?.rfiNo || rec.id || 'Unknown';
     sendNotification(rec.createdBy, `Your ${rec.templateKey === 'imir' ? 'IMIR' : 'RFI'} #${docNo} has been Approved by ${currentUser.display}`, 'approved', rec.id, docNo, currentUser.display);
@@ -1701,7 +1691,7 @@ function approveWithCommentRecord() {
   rec.audit.push(getAuditNow('Approved with Comment', c));
   rec.savedAt = new Date().toISOString();
   persistDb(); updateWorkflowButtons(rec);
-  toast(`📝 Approved with comment`);
+  toast('📝 Approved with comment');
   if (rec.createdBy) {
     const docNo = rec.meta?.rfiNo || rec.id || 'Unknown';
     sendNotification(rec.createdBy, `Your RFI #${docNo} has been Approved with Comment by ${currentUser.display}`, 'approved_comment', rec.id, docNo, currentUser.display);
@@ -1720,7 +1710,7 @@ function rejectRecord() {
   rec.audit.push(getAuditNow('Rejected', c));
   rec.savedAt = new Date().toISOString();
   persistDb(); updateWorkflowButtons(rec);
-  toast(`❌ Rejected`);
+  toast('❌ Rejected');
   if (rec.createdBy) {
     const docNo = rec.meta?.rfiNo || rec.id || 'Unknown';
     sendNotification(rec.createdBy, `Your ${rec.templateKey === 'imir' ? 'IMIR' : 'RFI'} #${docNo} has been Rejected by ${currentUser.display}`, 'rejected', rec.id, docNo, currentUser.display);
@@ -1803,10 +1793,16 @@ function openTemplate(key, reportId = null) {
   activeReportId = reportId;
   const t = templates[key];
   const report = reportId ? savedReports.find(r => r.id === reportId) : null;
+
+  // Set the sheet header fields
+  document.getElementById('sheetOrg').innerText = appConfig.companyName || 'QA/QC Suite';
+  document.getElementById('sheetDept').innerText = t.dept || 'QA / QC RECORDS';
   document.getElementById('fmtNo').innerText = 'Format No. - ' + buildFormatNo(t.formatNo);
   document.getElementById('sheetTitle').innerText = t.title;
+
   document.getElementById('appTitle').innerText = t.menuTitle;
   document.getElementById('appSub').innerText = buildFormatNo(t.formatNo);
+
   renderSheet(t, report);
   applyPendingChecklistPrefill();
   updateWorkflowButtons(report);
@@ -1916,7 +1912,7 @@ function renderHistory() {
     return;
   }
 
-  // Group RFIs with linked checklists
+  // RFI parent-child grouping for linked checklists
   const rfiRows = rows.filter(r => r.templateKey === 'rfi');
   const otherRows = rows.filter(r => r.templateKey !== 'rfi');
   const checklistMap = new Map();
@@ -1926,7 +1922,7 @@ function renderHistory() {
     checklistMap.get(key).push(chk);
   });
 
-  // Show standalone NCR/IMIR rows first
+  // Standalone NCR/IMIR
   const standalone = checklistMap.get('__standalone__') || [];
   standalone.forEach(r => {
     const scoreBadge = typeof r.score === 'number' ? `<span class="badge ${r.score < 60 ? 'bad' : r.score < 85 ? 'mid' : 'ok'}">${r.score}%</span>` : '<span class="badge mid">N/A</span>';
@@ -1943,7 +1939,7 @@ function renderHistory() {
     body.appendChild(tr);
   });
 
-  // Show RFI parent-child rows
+  // RFI parent rows with linked checklists
   rfiRows.forEach(r => {
     const linkedKey = r.meta?.rfiNo || r.id;
     const linkedList = checklistMap.get(linkedKey) || [];
@@ -1979,7 +1975,7 @@ function renderHistory() {
 }
 
 // ============================================
-// KPI FILTERING
+// KPI FILTERING (extended for NCR)
 // ============================================
 function kpiLabel(type) {
   const map = {
@@ -2082,7 +2078,7 @@ function buildPrintableRecordHtml(record) {
   if (!t) return '';
   let html = `<div class="print-block"><div class="sheet-shell print-sheet"><div class="sheet-head">`;
   html += `<div class="org">${esc(appConfig.companyName || 'QA/QC Suite')}</div>`;
-  html += `<div class="dept">QA / QC RECORDS FOR SITE</div>`;
+  html += `<div class="dept">${esc(t.dept || '')}</div>`;
   html += `<div class="format">Format No. - ${esc(record.formatNo || buildFormatNo(t.formatNo))}</div>`;
   html += `<div class="title">${esc(t.title)}</div></div>`;
   html += renderMetaRows(t.metaRows, record.meta || {});
