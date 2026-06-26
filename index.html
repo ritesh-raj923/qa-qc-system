@@ -171,8 +171,8 @@ header .sub { font-size: 13px; color: #555; }
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
   margin-bottom: 18px;
 }
 .stat, .history-wrap, .sheet-shell, .card, .login-wrap, .panel {
@@ -182,8 +182,8 @@ header .sub { font-size: 13px; color: #555; }
   padding: 16px;
   box-shadow: 0 8px 22px rgba(18,58,102,.08);
 }
-.stat .label { font-size: 12px; text-transform: uppercase; color: #666; font-weight: 700; margin-bottom: 6px; }
-.stat .value { font-size: 30px; color: var(--blue); font-weight: 800; }
+.stat .label { font-size: 11px; text-transform: uppercase; color: #666; font-weight: 700; margin-bottom: 4px; }
+.stat .value { font-size: 28px; color: var(--blue); font-weight: 800; }
 .stat { position: relative; overflow: hidden; cursor: pointer; transition: .2s; }
 .stat:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(18,58,102,.14); }
 .stat:before { content: ''; position: absolute; inset: 0 0 auto 0; height: 4px; background: linear-gradient(90deg, var(--blue), var(--gold)); }
@@ -193,23 +193,24 @@ header .sub { font-size: 13px; color: #555; }
 .stat.ok .value { color: var(--ok); }
 .stat.warn .value { color: var(--warn); }
 
-.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 16px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; margin-top: 16px; }
 .card { cursor: pointer; transition: .2s; }
 .card:hover { transform: translateY(-4px); border-color: var(--gold); box-shadow: 0 12px 28px rgba(18,58,102,.14); }
-.card h3 { font-size: 18px; color: var(--blue); margin-bottom: 8px; }
-.card p { font-size: 13px; color: #555; line-height: 1.45; min-height: 56px; }
-.card .foot { display: flex; justify-content: space-between; font-size: 12px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #ebeff5; color: #244; font-weight: 700; }
+.card h3 { font-size: 17px; color: var(--blue); margin-bottom: 6px; }
+.card p { font-size: 13px; color: #555; line-height: 1.4; min-height: 48px; }
+.card .foot { display: flex; justify-content: space-between; font-size: 12px; margin-top: 10px; padding-top: 8px; border-top: 1px solid #ebeff5; color: #244; font-weight: 700; }
 
 .history-wrap table, .sheet-table { width: 100%; border-collapse: collapse; }
-.history-wrap th, .history-wrap td { border: 1px solid #d9e2ea; padding: 10px; font-size: 13px; vertical-align: top; }
+.history-wrap th, .history-wrap td { border: 1px solid #d9e2ea; padding: 8px; font-size: 12px; vertical-align: top; }
 .history-wrap th { background: #f4f7fb; color: var(--blue); text-transform: uppercase; font-size: 11px; letter-spacing: .3px; }
 
 .btn {
-  padding: 10px 16px;
+  padding: 8px 14px;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   font-weight: 700;
   cursor: pointer;
+  font-size: 13px;
   box-shadow: 0 2px 8px rgba(18,58,102,.08);
 }
 .btn-primary { background: var(--blue); color: #fff; }
@@ -225,27 +226,26 @@ header .sub { font-size: 13px; color: #555; }
 .btn-warn:hover { background: #d48c00; }
 .btn:disabled { opacity: .5; cursor: not-allowed; }
 
-.topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.topbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
 .progressbox { text-align: right; }
-.progressline { width: 180px; height: 9px; background: #dfe7ee; border-radius: 999px; overflow: hidden; margin-top: 4px; }
+.progressline { width: 160px; height: 8px; background: #dfe7ee; border-radius: 999px; overflow: hidden; margin-top: 3px; }
 .progressline>div { height: 100%; width: 0; background: var(--ok); }
 
 .filters {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px;
   margin-bottom: 12px;
 }
-.field { display: grid; gap: 5px; margin-bottom: 10px; }
-.field label { font-size: 12px; font-weight: 700; color: #234; }
+.field { display: grid; gap: 4px; margin-bottom: 8px; }
+.field label { font-size: 11px; font-weight: 700; color: #234; }
 .field input, .field select, .field textarea {
   width: 100%;
-  padding: 10px 12px;
+  padding: 8px 10px;
   border: 1px solid #c8d3df;
-  border-radius: 10px;
+  border-radius: 8px;
   background: #fff;
   font-size: 13px;
-  transition: .2s;
 }
 .field input:focus, .field select:focus, .field textarea:focus {
   border-color: #8ab6ff;
@@ -253,39 +253,38 @@ header .sub { font-size: 13px; color: #555; }
   outline: none;
 }
 
-.login-shell { display: flex; justify-content: center; align-items: center; min-height: 70vh; }
-.login-wrap { max-width: 480px; width: 100%; }
+.login-shell { display: flex; justify-content: center; align-items: center; min-height: 60vh; }
+.login-wrap { max-width: 440px; width: 100%; }
 .login-wrap h2 { color: var(--blue); margin-bottom: 6px; }
-.login-wrap p { font-size: 13px; color: #555; margin-bottom: 12px; line-height: 1.4; }
+.login-wrap p { font-size: 13px; color: #555; margin-bottom: 12px; }
 
-.sheet-shell { padding: 22px; }
-.sheet-head { text-align: center; border: 1.8px solid var(--line); border-bottom: none; padding: 10px 8px; }
-.sheet-head .org { font-size: 19px; font-weight: 700; text-transform: uppercase; }
-.sheet-head .dept { font-size: 14px; font-weight: 700; margin-top: 2px; }
-.sheet-head .format { font-size: 13px; margin-top: 4px; font-weight: 700; }
-.sheet-head .title { font-size: 20px; font-weight: 700; margin-top: 8px; text-transform: uppercase; }
-.sheet-table { border: 1.8px solid var(--line); margin-bottom: 14px; }
-.sheet-table td, .sheet-table th { border: 1px solid var(--line); padding: 6px 8px; font-size: 13px; vertical-align: middle; }
+.sheet-shell { padding: 18px; }
+.sheet-head { text-align: center; border: 1.8px solid var(--line); border-bottom: none; padding: 10px 8px; background: #fff; }
+.sheet-head .org { font-size: 18px; font-weight: 700; text-transform: uppercase; }
+.sheet-head .dept { font-size: 14px; font-weight: 700; margin-top: 2px; color: #444; }
+.sheet-head .format { font-size: 12px; margin-top: 4px; font-weight: 700; color: #555; }
+.sheet-head .title { font-size: 19px; font-weight: 700; margin-top: 6px; text-transform: uppercase; color: var(--blue); }
+.sheet-table { border: 1.8px solid var(--line); margin-bottom: 12px; background: #fff; }
+.sheet-table td, .sheet-table th { border: 1px solid var(--line); padding: 5px 7px; font-size: 12px; vertical-align: middle; }
 .sheet-table th { background: #f3f3f3; font-weight: 700; }
-.label-cell { font-weight: 700; background: #fafafa; width: 18%; }
+.label-cell { font-weight: 700; background: #fafafa; width: 16%; }
 .value-input, .table-input, .table-textarea, .status-select, .plain-textarea, .sig-input {
   width: 100%;
   border: none;
   background: transparent;
-  padding: 0;
-  font-size: 13px;
+  padding: 2px;
+  font-size: 12px;
   outline: none;
 }
-.table-textarea, .plain-textarea { min-height: 42px; resize: vertical; }
-.check-section-row td { background: #efefef !important; font-weight: 700; text-transform: uppercase; }
+.table-textarea, .plain-textarea { min-height: 36px; resize: vertical; }
 .status-select.select-yes { color: var(--ok); font-weight: 700; }
 .status-select.select-no { color: var(--bad); font-weight: 700; }
 .status-select.select-na { color: #555; font-weight: 700; }
 
 .badge {
-  padding: 3px 8px;
+  padding: 2px 8px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   display: inline-block;
 }
@@ -294,37 +293,36 @@ header .sub { font-size: 13px; color: #555; }
 .badge.bad { background: #fce1e1; color: #9d1616; }
 .badge.info { background: #e8eef6; color: #234; }
 .hidden { display: none !important; }
-.small { font-size: 12px; color: #666; }
-.note { font-size: 12px; color: #555; margin-top: 6px; }
+.small { font-size: 11px; color: #666; }
+.note { font-size: 11px; color: #555; margin-top: 4px; }
 .toast {
   position: fixed;
   right: 20px;
   bottom: 20px;
-  background: #123;
+  background: #123a66;
   color: #fff;
-  padding: 10px 14px;
+  padding: 10px 16px;
   border-radius: 8px;
   display: none;
   z-index: 1000;
+  font-size: 14px;
 }
 .child-row td { background: #f7fbfd !important; }
 .parent-rfi-row td { background: #ffffff !important; }
 .child-row td:nth-child(2) { border-left: 4px solid var(--accent); }
 
-.kpi-panel { margin-top: 16px; padding: 18px; border-radius: 18px; background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%); border: 1px solid #dbe4ee; }
-.kpi-panel-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
-.kpi-title-wrap h3 { font-size: 18px; color: var(--blue); margin-bottom: 4px; font-weight: 800; }
+.kpi-panel { margin-top: 14px; padding: 16px; border-radius: 14px; background: #fff; border: 1px solid #dbe4ee; }
+.kpi-panel-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.kpi-title-wrap h3 { font-size: 17px; color: var(--blue); margin-bottom: 2px; font-weight: 800; }
 .kpi-title-wrap p { font-size: 12px; color: #607080; }
-.kpi-toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-.kpi-chip { display: inline-flex; align-items: center; padding: 7px 12px; border-radius: 999px; background: #edf4ff; border: 1px solid #d5e3f3; color: #123a66; font-size: 12px; font-weight: 700; }
+.kpi-chip { display: inline-flex; padding: 5px 10px; border-radius: 999px; background: #edf4ff; border: 1px solid #d5e3f3; color: #123a66; font-size: 12px; font-weight: 700; }
 .kpi-count { font-size: 12px; color: #556578; font-weight: 700; }
-.kpi-table-wrap { border: 1px solid #dbe4ee; border-radius: 14px; overflow: hidden; background: #fff; }
+.kpi-table-wrap { border: 1px solid #dbe4ee; border-radius: 12px; overflow: hidden; background: #fff; }
 .kpi-table { width: 100%; border-collapse: collapse; }
-.kpi-table th, .kpi-table td { padding: 11px 12px; border-bottom: 1px solid #e7edf5; font-size: 13px; text-align: left; vertical-align: middle; }
-.kpi-table th { background: #f4f8fc; color: #123a66; text-transform: uppercase; font-size: 11px; letter-spacing: .4px; font-weight: 800; }
-.kpi-table tbody tr:hover { background: #fbfdff; }
-.kpi-empty { text-align: center; color: #6a7786; padding: 26px 12px !important; }
-.kpi-status { display: inline-block; padding: 5px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; border: 1px solid transparent; }
+.kpi-table th, .kpi-table td { padding: 10px 12px; border-bottom: 1px solid #e7edf5; font-size: 13px; text-align: left; }
+.kpi-table th { background: #f4f8fc; color: #123a66; text-transform: uppercase; font-size: 11px; font-weight: 800; }
+.kpi-empty { text-align: center; color: #6a7786; padding: 20px 12px !important; }
+.kpi-status { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
 .kpi-status.approved { background: #dff6e7; color: #0b6b2e; }
 .kpi-status.comment { background: #fff2cf; color: #8a5a00; }
 .kpi-status.pending { background: #e8eef6; color: #234; }
@@ -332,9 +330,10 @@ header .sub { font-size: 13px; color: #555; }
 .kpi-status.closed { background: #e7f3ff; color: #184e8c; }
 
 .data-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
-.radio-line { display: flex; gap: 22px; flex-wrap: wrap; align-items: center; }
-.radio-line label { font-size: 13px; display: inline-flex; gap: 6px; align-items: center; }
+.radio-line { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; }
+.radio-line label { font-size: 13px; display: inline-flex; gap: 4px; align-items: center; }
 .scorebox { font-size: 14px; font-weight: 700; }
+.check-section-row td { background: #efefef !important; font-weight: 700; text-transform: uppercase; }
 
 @media (max-width: 900px) {
   body { display: block; }
@@ -372,7 +371,7 @@ header .sub { font-size: 13px; color: #555; }
       <h1 id="appTitle">QA/QC Inspection Suite</h1>
       <div class="sub" id="appSub">Project Name - Location</div>
     </div>
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
       <span class="badge info" id="viewBadge">Not Logged In</span>
       <div class="notif-container" id="notifContainer" style="display:none;">
         <div class="notif-bell" id="notifBell" onclick="toggleNotifications()">🔔</div>
@@ -396,22 +395,22 @@ header .sub { font-size: 13px; color: #555; }
         <p>QA/QC Inspection Suite with multi-user workflow. Engineers submit, QA Heads review & approve.</p>
         <div class="field">
           <label>Username</label>
-          <input id="loginUser" placeholder="Enter username" value="engineer1">
+          <input id="loginUser" placeholder="Enter username" value="Project 1">
         </div>
         <div class="field">
           <label>Password</label>
-          <input id="loginPass" type="password" placeholder="Enter password" value="Eng123">
+          <input id="loginPass" type="password" placeholder="Enter password" value="Project_1@811">
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;">
           <button class="btn btn-primary" type="button" onclick="login()">Login</button>
         </div>
         <div class="note" style="margin-top:12px; line-height:1.8;">
           <b>Demo Users:</b><br>
-          👷 Engineer 1: engineer1 / Eng123<br>
-          👷 Engineer 2: engineer2 / Eng456<br>
-          👷 Engineer 3: engineer3 / Eng789<br>
-          👷 Engineer 4: engineer4 / Eng000<br>
-          👷 Engineer 5: engineer5 / Eng999<br>
+          📁 Project 1: Project 1 / Project_1@811<br>
+          📁 Project 2: Project 2 / Project_2@812<br>
+          📁 Project 3: Project 3 / Project_3@813<br>
+          📁 Project 4: Project 4 / Project_4@814<br>
+          📁 Project 5: Project 5 / Project_5@815<br>
           👔 QA Head: qahead / Head123<br>
           📊 Manager: manager / Mgr123<br>
           🔧 Admin: admin / Admin123<br>
@@ -464,21 +463,21 @@ header .sub { font-size: 13px; color: #555; }
   <div id="view-history" class="view">
     <div class="history-wrap">
       <div class="filters">
-        <div class="field"><label>Project</label><input id="fltProject" oninput="renderHistory()" placeholder="Filter by project"></div>
-        <div class="field"><label>Form Type</label><select id="fltType" onchange="renderHistory()"><option value="">All</option></select></div>
-        <div class="field"><label>Contractor</label><input id="fltContractor" oninput="renderHistory()" placeholder="Filter by contractor"></div>
-        <div class="field"><label>Discipline</label><input id="fltDiscipline" oninput="renderHistory()" placeholder="Filter by discipline"></div>
+        <div class="field"><label>Project</label><input id="fltProject" oninput="applyFiltersAndRefresh()" placeholder="Filter by project"></div>
+        <div class="field"><label>Form Type</label><select id="fltType" onchange="applyFiltersAndRefresh()"><option value="">All</option></select></div>
+        <div class="field"><label>Contractor</label><input id="fltContractor" oninput="applyFiltersAndRefresh()" placeholder="Filter by contractor"></div>
+        <div class="field"><label>Discipline</label><input id="fltDiscipline" oninput="applyFiltersAndRefresh()" placeholder="Filter by discipline"></div>
         <div class="field"><label>Status</label>
-          <select id="fltStatus" onchange="renderHistory()">
+          <select id="fltStatus" onchange="applyFiltersAndRefresh()">
             <option value="">All</option>
             <option>Draft</option><option>Submitted</option><option>Under Review</option>
             <option>Approved</option><option>Approved with Comment</option>
             <option>Rejected</option><option>Closed</option>
           </select>
         </div>
-        <div class="field"><label>From Date</label><input id="fltDateFrom" type="date" onchange="renderHistory()"></div>
-        <div class="field"><label>To Date</label><input id="fltDateTo" type="date" onchange="renderHistory()"></div>
-        <div class="field"><label>Owner</label><input id="fltOwner" oninput="renderHistory()" placeholder="Filter by owner"></div>
+        <div class="field"><label>From Date</label><input id="fltDateFrom" type="date" onchange="applyFiltersAndRefresh()"></div>
+        <div class="field"><label>To Date</label><input id="fltDateTo" type="date" onchange="applyFiltersAndRefresh()"></div>
+        <div class="field"><label>Owner</label><input id="fltOwner" oninput="applyFiltersAndRefresh()" placeholder="Filter by owner"></div>
         <div class="field"><label>&nbsp;</label><button class="btn btn-primary" type="button" onclick="printFilteredHistory()">🖨️ Print</button></div>
       </div>
       <div class="data-actions">
@@ -547,7 +546,6 @@ header .sub { font-size: 13px; color: #555; }
         <button id="btnApproveComment" class="btn btn-secondary hidden" onclick="approveWithCommentRecord()" type="button" style="margin-left:8px;">📝 Approve w/ Comment</button>
         <button id="btnReject" class="btn btn-danger hidden" onclick="rejectRecord()" type="button" style="margin-left:8px;">❌ Reject</button>
         <button id="btnClose" class="btn btn-primary hidden" onclick="closeRecord()" type="button" style="margin-left:8px;">🔒 Close</button>
-        <!-- 🆕 Raise NCR Button -->
         <button id="btnRaiseNCR" class="btn btn-secondary hidden" onclick="raiseNCRFromRFI()" type="button" style="margin-left:8px;">📋 Raise NCR</button>
       </div>
       <div class="progressbox">
@@ -617,17 +615,22 @@ let pendingParentMeta = null;
 let currentKpiFilter = 'total';
 let currentKpiRows = [];
 
+// ===== GLOBAL FILTER STATE (linked to Dashboard) =====
+let globalFilterState = { project: '', type: '', contractor: '', discipline: '', status: '', fromDate: '', toDate: '', owner: '' };
+
 // Notifications
 let notifications = [];
-let notificationInterval = null;
+let notificationPollInterval = null;
 
-// Users
+// ============================================
+// USERS (5 Projects + QA Head + others)
+// ============================================
 const users = [
-  { u: 'engineer1', p: 'Eng123', role: 'engineer', name: 'Engineer 1' },
-  { u: 'engineer2', p: 'Eng456', role: 'engineer', name: 'Engineer 2' },
-  { u: 'engineer3', p: 'Eng789', role: 'engineer', name: 'Engineer 3' },
-  { u: 'engineer4', p: 'Eng000', role: 'engineer', name: 'Engineer 4' },
-  { u: 'engineer5', p: 'Eng999', role: 'engineer', name: 'Engineer 5' },
+  { u: 'Project 1', p: 'Project_1@811', role: 'engineer', name: 'Project 1' },
+  { u: 'Project 2', p: 'Project_2@812', role: 'engineer', name: 'Project 2' },
+  { u: 'Project 3', p: 'Project_3@813', role: 'engineer', name: 'Project 3' },
+  { u: 'Project 4', p: 'Project_4@814', role: 'engineer', name: 'Project 4' },
+  { u: 'Project 5', p: 'Project_5@815', role: 'engineer', name: 'Project 5' },
   { u: 'qahead', p: 'Head123', role: 'qa_head', name: 'QA Head' },
   { u: 'manager', p: 'Mgr123', role: 'manager', name: 'Project Manager' },
   { u: 'admin', p: 'Admin123', role: 'admin', name: 'Admin' },
@@ -635,7 +638,7 @@ const users = [
 ];
 
 // ============================================
-// TEMPLATES (with exact Excel replication)
+// TEMPLATES (NCR: removed visible "Raised from RFI")
 // ============================================
 const templates = {
   rfi: {
@@ -734,12 +737,12 @@ const templates = {
       { type: 'signatures', title: 'Signatures', roles: ['Contractor Representative', 'Client Representative'] }
     ]
   },
-  // ===== NCR (exact replica) =====
+  // ===== NCR (exact replica – NO "Raised from RFI" visible) =====
   ncr: {
     formatNo: 'ADANI/Q/F-09 Rev 0',
     menuTitle: 'NCR',
     title: 'NON CONFORMANCE REPORT',
-    dept: 'Issued by QA/FQA to respective agency',
+    dept: '(Issued by QA/FQA to respective agency)',
     summary: 'Non‑Conformance Report (NCR) issued by QA/FQA to respective agency.',
     metaRows: [
       [{ l: 'NCR No.:', k: 'ncrNo' }, { l: 'Category:', k: 'category' }],
@@ -748,8 +751,7 @@ const templates = {
       [{ l: 'WBS Code:', k: 'wbsCode' }, { l: 'Location:', k: 'location' }],
       [{ l: 'PO/SO Name:', k: 'poSoName' }, { l: 'Discipline:', k: 'discipline' }],
       [{ l: 'PO/SO No.:', k: 'poSoNo' }, { l: 'NCR Date:', k: 'ncrDate', t: 'date' }],
-      [{ l: 'PO/SO Date:', k: 'poSoDate', t: 'date' }, { l: 'Material/Service:', k: 'materialService' }],
-      [{ l: 'Raised from RFI:', k: 'raisedFromRfi' }]
+      [{ l: 'PO/SO Date:', k: 'poSoDate', t: 'date' }, { l: 'Material/Service:', k: 'materialService' }]
     ],
     sections: [
       { type: 'table', title: 'Description of Material', columns: ['Description of Material', 'ID/ Tag', 'Quantity', 'UoM'], rows: 4 },
@@ -873,7 +875,7 @@ function getProjectDisplay() {
 }
 
 // ============================================
-// NOTIFICATION FUNCTIONS
+// NOTIFICATION FUNCTIONS (with Desktop pop-ups)
 // ============================================
 function loadNotifications() {
   try { notifications = JSON.parse(localStorage.getItem(NOTIFICATION_KEY) || '[]'); } catch(e) { notifications = []; }
@@ -899,12 +901,17 @@ function sendNotification(recipientUsername, message, type, rfiId, rfiNo, sender
   notifications.unshift(notif);
   if (notifications.length > 200) notifications = notifications.slice(0, 200);
   saveNotifications();
+
+  // If recipient is current user, show notification immediately
   if (currentUser && currentUser.username === recipientUsername) {
     const iconMap = { 'new_rfi': '🔔', 'approved': '✅', 'rejected': '❌', 'under_review': '🔍', 'approved_comment': '📝', 'new_ncr': '📋', 'closed_ncr': '🔒' };
     const icon = iconMap[type] || '📢';
     toast(icon + ' ' + message);
+    // Desktop notification
     if (Notification.permission === 'granted') {
-      new Notification(icon + ' ' + message, { body: 'Tap to open', icon: '🔔' });
+      try {
+        new Notification(icon + ' ' + message, { body: 'Click to open', icon: '🔔' });
+      } catch(e) {}
     }
   }
   if (currentUser && currentUser.username === recipientUsername) { updateNotificationUI(); }
@@ -966,6 +973,48 @@ function handleNotificationClick(notifId, rfiId) {
   markNotificationRead(notifId);
   document.getElementById('notifDropdown').classList.remove('open');
   if (rfiId) openRecord(rfiId);
+}
+
+// ===== Notification polling for all logged-in users =====
+function startNotificationPolling() {
+  if (notificationPollInterval) clearInterval(notificationPollInterval);
+  if (!currentUser) return;
+
+  // Request notification permission
+  if (Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+
+  // Initial check after 1 second
+  setTimeout(checkForNewNotifications, 1000);
+  // Then every 10 seconds
+  notificationPollInterval = setInterval(checkForNewNotifications, 10000);
+}
+
+function checkForNewNotifications() {
+  if (!currentUser) return;
+  try {
+    const stored = JSON.parse(localStorage.getItem(NOTIFICATION_KEY) || '[]');
+    const userNotifs = stored.filter(n => n.recipientUsername === currentUser.username && !n.read);
+    // If there are unread notifications, update UI and show toast for the latest one
+    if (userNotifs.length > 0) {
+      // Check if there are any notifications that were not previously shown
+      const latest = userNotifs[0];
+      // Use a simple check: if the notification is less than 30 seconds old, show toast
+      const notifAge = Date.now() - new Date(latest.createdAt).getTime();
+      if (notifAge < 30000) {
+        const iconMap = { 'new_rfi': '🔔', 'approved': '✅', 'rejected': '❌', 'under_review': '🔍', 'approved_comment': '📝', 'new_ncr': '📋', 'closed_ncr': '🔒' };
+        const icon = iconMap[latest.type] || '📢';
+        toast(icon + ' ' + latest.message);
+        if (Notification.permission === 'granted') {
+          try {
+            new Notification(icon + ' ' + latest.message, { body: 'Click to open', icon: '🔔' });
+          } catch(e) {}
+        }
+      }
+      updateNotificationUI();
+    }
+  } catch(e) {}
 }
 
 // ============================================
@@ -1058,6 +1107,10 @@ function login() {
   saveSession();
   document.querySelectorAll('.auth-only').forEach(el => el.classList.remove('hidden'));
   renderCards(); renderHistory(); updateStats(); updateAdminToolsVisibility(); updateNotificationUI();
+  // Start notification polling
+  startNotificationPolling();
+  // Apply any saved filters
+  applyFiltersAndRefresh();
   switchView('dashboard');
   toast('✅ Welcome ' + found.name);
   const unread = getUnreadCount(currentUser.username);
@@ -1065,10 +1118,13 @@ function login() {
 }
 
 function logout() {
+  if (notificationPollInterval) { clearInterval(notificationPollInterval); notificationPollInterval = null; }
   currentUser = null;
   saveSession();
   document.querySelectorAll('.auth-only').forEach(el => el.classList.add('hidden'));
   document.getElementById('notifContainer').style.display = 'none';
+  // Clear filter state
+  globalFilterState = { project: '', type: '', contractor: '', discipline: '', status: '', fromDate: '', toDate: '', owner: '' };
   switchView('login');
   toast('👋 Logged out');
 }
@@ -1078,13 +1134,70 @@ function canSeeAll() { return currentUser && (currentUser.role === 'qa_head' || 
 function canDeleteRecord(rec) { return currentUser && (currentUser.role === 'admin' || currentUser.role === 'qa_head' || rec?.createdBy === currentUser.username); }
 
 function visibleReports() {
-  if (canSeeAll()) return savedReports.slice();
-  return savedReports.filter(r => r.createdBy === currentUser?.username);
+  let rows = savedReports.slice();
+  // Apply global filter state
+  if (globalFilterState.project) {
+    rows = rows.filter(r => String(r.meta?.project || r.titleLoc || '').toLowerCase().includes(globalFilterState.project.toLowerCase()));
+  }
+  if (globalFilterState.type) {
+    rows = rows.filter(r => r.templateKey === globalFilterState.type);
+  }
+  if (globalFilterState.contractor) {
+    rows = rows.filter(r => String(r.meta?.contractor || '').toLowerCase().includes(globalFilterState.contractor.toLowerCase()));
+  }
+  if (globalFilterState.discipline) {
+    rows = rows.filter(r => String(r.meta?.discipline || '').toLowerCase().includes(globalFilterState.discipline.toLowerCase()));
+  }
+  if (globalFilterState.status) {
+    rows = rows.filter(r => (r.status || 'Draft') === globalFilterState.status);
+  }
+  if (globalFilterState.fromDate) {
+    rows = rows.filter(r => (r.meta?.date || r.savedAt || '') >= globalFilterState.fromDate);
+  }
+  if (globalFilterState.toDate) {
+    rows = rows.filter(r => (r.meta?.date || r.savedAt || '') <= globalFilterState.toDate);
+  }
+  if (globalFilterState.owner) {
+    rows = rows.filter(r => String(r.createdByDisplay || '').toLowerCase().includes(globalFilterState.owner.toLowerCase()));
+  }
+  // Apply role-based visibility
+  if (!canSeeAll()) {
+    rows = rows.filter(r => r.createdBy === currentUser?.username);
+  }
+  return rows;
 }
 
 function updateAdminToolsVisibility() {
   const box = document.getElementById('adminToolsBox');
   if (box) box.classList.toggle('hidden', !(currentUser && currentUser.role === 'admin'));
+}
+
+// ============================================
+// FILTER SYNC: Saved Records ↔ Dashboard
+// ============================================
+function getSavedRecordFilterState() {
+  return {
+    project: document.getElementById('fltProject')?.value || '',
+    type: document.getElementById('fltType')?.value || '',
+    contractor: document.getElementById('fltContractor')?.value || '',
+    discipline: document.getElementById('fltDiscipline')?.value || '',
+    status: document.getElementById('fltStatus')?.value || '',
+    fromDate: document.getElementById('fltDateFrom')?.value || '',
+    toDate: document.getElementById('fltDateTo')?.value || '',
+    owner: document.getElementById('fltOwner')?.value || ''
+  };
+}
+
+function applyFiltersAndRefresh() {
+  // Capture filter state from the Saved Records view
+  globalFilterState = getSavedRecordFilterState();
+  // Refresh dashboard stats and history
+  updateStats();
+  renderHistory();
+  // If dashboard is active, also update the KPI panel
+  if (document.getElementById('view-dashboard').classList.contains('active')) {
+    if (currentKpiFilter) filterKPI(currentKpiFilter);
+  }
 }
 
 // ============================================
@@ -1166,7 +1279,7 @@ function renderCards() {
       <h3>📄 ${esc(t.menuTitle)}</h3>
       <p>${esc(t.summary)}</p>
       <div class="foot">
-        <span>${esc(buildFormatNo(t.formatNo))}</span>
+        <span>${esc(t.formatNo)}</span>
         <span>${t.menuTitle === 'RFI' ? '10 lines' : t.menuTitle === 'NCR' ? '20 lines' : t.menuTitle === 'IMIR' ? '15 lines' : '19 lines'}</span>
       </div>`;
     c.onclick = () => openTemplate(k);
@@ -1175,7 +1288,7 @@ function renderCards() {
 }
 
 // ============================================
-// FORM RENDERING (Supports NCR & IMIR exactly)
+// FORM RENDERING
 // ============================================
 function makeInput(id, value, type = 'text', options = []) {
   if (type === 'select') {
@@ -1481,9 +1594,11 @@ function saveReport(ev) {
   const preparedBy = meta.preparedBy || meta.raisedBy || meta.contractor || meta.agency || meta.to || '';
   const attachmentInput = document.getElementById('wfAttachment');
   const attachmentNames = attachmentInput ? Array.from(attachmentInput.files || []).map(f => f.name) : (existing?.attachments || []);
+  // Store raisedFromRfi internally for NCR (not visible in form)
+  const raisedFromRfi = meta.raisedFromRfi || '';
   const row = {
     id, templateKey: activeTemplateKey, templateName: t.title,
-    formatNo: buildFormatNo(t.formatNo), meta, sections,
+    formatNo: t.formatNo || buildFormatNo('01'), meta, sections,
     score: 0, defectsCount: 0, titleLoc, preparedBy,
     status: existing?.status || 'Draft',
     comment: document.getElementById('wfComment')?.value.trim() || existing?.comment || '',
@@ -1493,7 +1608,8 @@ function saveReport(ev) {
     decisionBy: existing?.decisionBy || '',
     decisionByDisplay: existing?.decisionByDisplay || '',
     savedAt: new Date().toISOString(),
-    audit: (existing?.audit || []).concat([getAuditNow(existing ? 'Updated' : 'Created', document.getElementById('wfComment')?.value.trim() || '')])
+    audit: (existing?.audit || []).concat([getAuditNow(existing ? 'Updated' : 'Created', document.getElementById('wfComment')?.value.trim() || '')]),
+    raisedFromRfi: raisedFromRfi // internal use only
   };
   let yes = 0, no = 0;
   sections.forEach(sec => {
@@ -1545,7 +1661,6 @@ function updateWorkflowButtons(rec) {
   const showReject = canApprove() && ['Submitted', 'Under Review'].includes(status);
   const showClose = canApprove() && ['Submitted', 'Under Review', 'Approved', 'Approved with Comment'].includes(status) && isNcr;
 
-  // Raise NCR button: visible only when viewing an RFI and user is QA Head/Admin
   const btnRaiseNCR = document.getElementById('btnRaiseNCR');
   if (btnRaiseNCR) {
     btnRaiseNCR.classList.toggle('hidden', !(isRfi && (currentUser?.role === 'qa_head' || currentUser?.role === 'admin')));
@@ -1569,7 +1684,7 @@ function setChecklistButtonsState(rec) {
 }
 
 // ============================================
-// 🆕 RAISE NCR FROM RFI
+// RAISE NCR FROM RFI (keeps raisedFromRfi internal)
 // ============================================
 function raiseNCRFromRFI() {
   const rfi = currentRecord();
@@ -1594,14 +1709,14 @@ function raiseNCRFromRFI() {
     ncrDate: new Date().toISOString().split('T')[0],
     poSoDate: '',
     materialService: '',
-    raisedFromRfi: rfiMeta.rfiNo || rfi.id || ''
+    raisedFromRfi: rfiMeta.rfiNo || rfi.id || '' // internal use only
   };
   const ncrId = 'rep_' + Date.now();
   const newNCR = {
     id: ncrId,
     templateKey: 'ncr',
     templateName: 'NON CONFORMANCE REPORT',
-    formatNo: buildFormatNo('ADANI/Q/F-09 Rev 0'),
+    formatNo: 'ADANI/Q/F-09 Rev 0',
     meta: ncrMeta,
     sections: [],
     score: 0,
@@ -1616,7 +1731,8 @@ function raiseNCRFromRFI() {
     decisionBy: '',
     decisionByDisplay: '',
     savedAt: new Date().toISOString(),
-    audit: [getAuditNow('Created from RFI #' + (rfiMeta.rfiNo || rfi.id || ''), '')]
+    audit: [getAuditNow('Created from RFI #' + (rfiMeta.rfiNo || rfi.id || ''), '')],
+    raisedFromRfi: rfiMeta.rfiNo || rfi.id || ''
   };
   savedReports.unshift(newNCR);
   persistDb();
@@ -1625,7 +1741,7 @@ function raiseNCRFromRFI() {
 }
 
 // ============================================
-// WORKFLOW ACTIONS
+// WORKFLOW ACTIONS (with proper notifications)
 // ============================================
 function submitRecord() {
   const rec = currentRecord();
@@ -1638,6 +1754,8 @@ function submitRecord() {
   persistDb();
   updateWorkflowButtons(rec); setChecklistButtonsState(rec);
   toast('📤 Submitted successfully');
+
+  // 🔔 Engineer/Project submits → Notify QA Head
   const qaHeadUser = users.find(u => u.role === 'qa_head');
   if (qaHeadUser) {
     const isNcr = rec.templateKey === 'ncr';
@@ -1656,6 +1774,7 @@ function markUnderReview() {
   rec.savedAt = new Date().toISOString();
   persistDb(); updateWorkflowButtons(rec);
   toast('🔍 Under review');
+  // 🔔 QA Head marks Under Review → Notify Engineer who created it
   if (rec.createdBy) {
     const docNo = rec.meta?.rfiNo || rec.id || 'Unknown';
     sendNotification(rec.createdBy, `Your RFI #${docNo} is now Under Review by ${currentUser.display}`, 'under_review', rec.id, docNo, currentUser.display);
@@ -1673,6 +1792,7 @@ function approveRecord() {
   rec.savedAt = new Date().toISOString();
   persistDb(); updateWorkflowButtons(rec);
   toast('✅ Approved');
+  // 🔔 QA Head approves → Notify Engineer who created it
   if (rec.createdBy) {
     const docNo = rec.meta?.rfiNo || rec.id || 'Unknown';
     sendNotification(rec.createdBy, `Your ${rec.templateKey === 'imir' ? 'IMIR' : 'RFI'} #${docNo} has been Approved by ${currentUser.display}`, 'approved', rec.id, docNo, currentUser.display);
@@ -1794,14 +1914,13 @@ function openTemplate(key, reportId = null) {
   const t = templates[key];
   const report = reportId ? savedReports.find(r => r.id === reportId) : null;
 
-  // Set the sheet header fields
   document.getElementById('sheetOrg').innerText = appConfig.companyName || 'QA/QC Suite';
   document.getElementById('sheetDept').innerText = t.dept || 'QA / QC RECORDS';
-  document.getElementById('fmtNo').innerText = 'Format No. - ' + buildFormatNo(t.formatNo);
+  document.getElementById('fmtNo').innerText = 'Format No. - ' + (t.formatNo || buildFormatNo('01'));
   document.getElementById('sheetTitle').innerText = t.title;
 
   document.getElementById('appTitle').innerText = t.menuTitle;
-  document.getElementById('appSub').innerText = buildFormatNo(t.formatNo);
+  document.getElementById('appSub').innerText = t.formatNo || '';
 
   renderSheet(t, report);
   applyPendingChecklistPrefill();
@@ -1829,14 +1948,13 @@ function deleteReport(id) {
 }
 
 // ============================================
-// STATS & DASHBOARD
+// STATS & DASHBOARD (with filter sync)
 // ============================================
 function updateStats() {
   const rows = visibleReports();
   const rfis = rows.filter(r => r.templateKey === 'rfi');
   const ncrs = rows.filter(r => r.templateKey === 'ncr');
 
-  // RFI stats
   const approvedOnly = rfis.filter(r => r.status === 'Approved' || r.status === 'Closed').length;
   const approvedWithComment = rfis.filter(r => r.status === 'Approved with Comment').length;
   const allApproved = approvedOnly + approvedWithComment;
@@ -1849,7 +1967,6 @@ function updateStats() {
   document.getElementById('approvedCommentRfi').innerText = approvedWithComment;
   document.getElementById('rejectedRfi').innerText = rfis.filter(r => r.status === 'Rejected').length;
 
-  // NCR stats
   const ncrTotal = ncrs.length;
   const ncrClosed = ncrs.filter(r => r.status === 'Closed').length;
   const ncrOpen = ncrTotal - ncrClosed;
@@ -1863,19 +1980,6 @@ function updateStats() {
   updateNotificationUI();
 }
 
-function getSavedRecordFilterState() {
-  return {
-    project: document.getElementById('fltProject')?.value?.toLowerCase() || '',
-    type: document.getElementById('fltType')?.value || '',
-    contractor: document.getElementById('fltContractor')?.value?.toLowerCase() || '',
-    discipline: document.getElementById('fltDiscipline')?.value?.toLowerCase() || '',
-    status: document.getElementById('fltStatus')?.value || '',
-    fromDate: document.getElementById('fltDateFrom')?.value || '',
-    toDate: document.getElementById('fltDateTo')?.value || '',
-    owner: document.getElementById('fltOwner')?.value?.toLowerCase() || ''
-  };
-}
-
 function recordDateKey(rec) {
   const raw = rec.meta?.date || rec.savedAt || '';
   if (!raw) return '';
@@ -1887,20 +1991,7 @@ function recordDateKey(rec) {
 }
 
 function getHistoryFilteredRows() {
-  const f = getSavedRecordFilterState();
-  let rows = visibleReports();
-  rows = rows.filter(r => {
-    const dateKey = recordDateKey(r);
-    return (!f.project || String(r.titleLoc || r.meta?.project || '').toLowerCase().includes(f.project)) &&
-      (!f.type || r.templateKey === f.type) &&
-      (!f.contractor || String(r.meta?.contractor || '').toLowerCase().includes(f.contractor)) &&
-      (!f.discipline || String(r.meta?.discipline || '').toLowerCase().includes(f.discipline)) &&
-      (!f.status || (r.status || 'Draft') === f.status) &&
-      (!f.fromDate || (dateKey && dateKey >= f.fromDate)) &&
-      (!f.toDate || (dateKey && dateKey <= f.toDate)) &&
-      (!f.owner || String(r.createdByDisplay || '').toLowerCase().includes(f.owner));
-  });
-  return rows;
+  return visibleReports();
 }
 
 function renderHistory() {
@@ -1912,7 +2003,6 @@ function renderHistory() {
     return;
   }
 
-  // RFI parent-child grouping for linked checklists
   const rfiRows = rows.filter(r => r.templateKey === 'rfi');
   const otherRows = rows.filter(r => r.templateKey !== 'rfi');
   const checklistMap = new Map();
@@ -1922,7 +2012,6 @@ function renderHistory() {
     checklistMap.get(key).push(chk);
   });
 
-  // Standalone NCR/IMIR
   const standalone = checklistMap.get('__standalone__') || [];
   standalone.forEach(r => {
     const scoreBadge = typeof r.score === 'number' ? `<span class="badge ${r.score < 60 ? 'bad' : r.score < 85 ? 'mid' : 'ok'}">${r.score}%</span>` : '<span class="badge mid">N/A</span>';
@@ -1939,7 +2028,6 @@ function renderHistory() {
     body.appendChild(tr);
   });
 
-  // RFI parent rows with linked checklists
   rfiRows.forEach(r => {
     const linkedKey = r.meta?.rfiNo || r.id;
     const linkedList = checklistMap.get(linkedKey) || [];
@@ -1975,20 +2063,15 @@ function renderHistory() {
 }
 
 // ============================================
-// KPI FILTERING (extended for NCR)
+// KPI FILTERING
 // ============================================
 function kpiLabel(type) {
   const map = {
-    total: 'All RFI',
-    approval: 'Approved RFI',
-    pending: 'Pending RFI',
-    approved: 'Approved RFI',
-    approved_comment: 'RFI w/ Comment',
-    rejected: 'Rejected RFI',
-    ncr_total: 'All NCR',
-    ncr_open: 'Open NCR',
-    ncr_closed: 'Closed NCR',
-    ncr_closed_pct: 'NCR Closed %'
+    total: 'All RFI', approval: 'Approved RFI',
+    pending: 'Pending RFI', approved: 'Approved RFI',
+    approved_comment: 'RFI w/ Comment', rejected: 'Rejected RFI',
+    ncr_total: 'All NCR', ncr_open: 'Open NCR',
+    ncr_closed: 'Closed NCR', ncr_closed_pct: 'NCR Closed %'
   };
   return map[type] || 'Filtered';
 }
@@ -2070,7 +2153,7 @@ function renderKPIResults(data, type, customTitle, customSub) {
 }
 
 // ============================================
-// PRINT FUNCTIONS
+// PRINT FUNCTIONS (unchanged)
 // ============================================
 function buildPrintableRecordHtml(record) {
   if (!record) return '';
@@ -2079,7 +2162,7 @@ function buildPrintableRecordHtml(record) {
   let html = `<div class="print-block"><div class="sheet-shell print-sheet"><div class="sheet-head">`;
   html += `<div class="org">${esc(appConfig.companyName || 'QA/QC Suite')}</div>`;
   html += `<div class="dept">${esc(t.dept || '')}</div>`;
-  html += `<div class="format">Format No. - ${esc(record.formatNo || buildFormatNo(t.formatNo))}</div>`;
+  html += `<div class="format">Format No. - ${esc(record.formatNo || '')}</div>`;
   html += `<div class="title">${esc(t.title)}</div></div>`;
   html += renderMetaRows(t.metaRows, record.meta || {});
   (t.sections || []).forEach((sec, si) => {
@@ -2193,6 +2276,8 @@ function init() {
 
   if (currentUser) {
     document.querySelectorAll('.auth-only').forEach(el => el.classList.remove('hidden'));
+    startNotificationPolling();
+    applyFiltersAndRefresh();
     switchView('dashboard');
     setActiveKpiCard('total');
     const unread = getUnreadCount(currentUser.username);
