@@ -308,7 +308,6 @@ header .sub { font-size: 13px; color: #555; }
       <div class="stat warn" data-kpi="pending" onclick="filterKPI('pending')"><div class="label">⏳ Pending RFI</div><div class="value" id="pendingRfi">0</div></div>
       <div class="stat ok" data-kpi="approved" onclick="filterKPI('approved')"><div class="label">✔️ Approved RFI</div><div class="value" id="approvedRfi">0</div></div>
       <div class="stat" data-kpi="approved_comment" onclick="filterKPI('approved_comment')"><div class="label">📝 Approved with Comment</div><div class="value" id="approvedCommentRfi">0</div></div>
-      <div class="stat" data-kpi="closed" onclick="filterKPI('closed')"><div class="label">🔒 Closed RFI</div><div class="value" id="closedRfi">0</div></div>
       <div class="stat alert" data-kpi="rejected" onclick="filterKPI('rejected')"><div class="label">❌ Rejected RFI</div><div class="value" id="rejectedRfi">0</div></div>
     </div>
 
@@ -348,7 +347,7 @@ header .sub { font-size: 13px; color: #555; }
             <option value="">All</option>
             <option>Draft</option><option>Submitted</option><option>Under Review</option>
             <option>Approved</option><option>Approved with Comment</option>
-            <option>Rejected</option><option>Closed</option>
+            <option>Rejected</option>
           </select>
         </div>
         <div class="field"><label>From Date</label><input id="fltDateFrom" type="date" onchange="renderHistory()"></div>
@@ -421,7 +420,6 @@ header .sub { font-size: 13px; color: #555; }
         <button id="btnApprove" class="btn btn-ok hidden" onclick="approveRFI()" type="button" style="margin-left:8px;">✅ Approve</button>
         <button id="btnApproveComment" class="btn btn-secondary hidden" onclick="approveWithCommentRFI()" type="button" style="margin-left:8px;">📝 Approve w/ Comment</button>
         <button id="btnReject" class="btn btn-danger hidden" onclick="rejectRFI()" type="button" style="margin-left:8px;">❌ Reject</button>
-        <button id="btnClose" class="btn btn-primary hidden" onclick="closeRFI()" type="button" style="margin-left:8px;">🔒 Close</button>
       </div>
       <div class="progressbox">
         <div class="small">Completion Progress</div>
@@ -489,7 +487,7 @@ let pendingParentMeta = null;
 let currentKpiFilter = 'total';
 let currentKpiRows = [];
 
-// 🔔 NEW: Variables for notification system
+// Variables for notification system
 let lastCheckTimestamp = null;
 let notificationInterval = null;
 
@@ -632,12 +630,12 @@ function getLinkedChecklistsForRfi(rfiNo) {
 
 function canAddChecklistToRfi(rec) {
   if (!rec) return false;
-  return !['Approved', 'Approved with Comment', 'Rejected', 'Closed'].includes(rec.status || 'Draft');
+  return !['Approved', 'Approved with Comment', 'Rejected'].includes(rec.status || 'Draft');
 }
 
 function badgeForStatus(s) {
   const map = {
-    'Approved': 'ok', 'Closed': 'ok',
+    'Approved': 'ok',
     'Approved with Comment': 'mid',
     'Rejected': 'bad',
     'Submitted': 'mid', 'Under Review': 'mid'
@@ -667,7 +665,7 @@ function getProjectDisplay() {
 }
 
 // ============================================
-// 🔔 NEW: NOTIFICATION SYSTEM FOR QA HEAD
+// NOTIFICATION SYSTEM FOR QA HEAD
 // ============================================
 
 async function checkForNewRFIs() {
@@ -869,14 +867,14 @@ function login() {
   switchView('dashboard');
   toast('✅ Welcome ' + found.name);
   
-  // 🔔 START NOTIFICATION CHECKER IF QA HEAD
+  // START NOTIFICATION CHECKER IF QA HEAD
   if (currentUser.role === 'qa_head') {
       startNotificationChecker();
   }
 }
 
 function logout() {
-  // 🔔 STOP NOTIFICATION CHECKER
+  // STOP NOTIFICATION CHECKER
   if (notificationInterval) {
       clearInterval(notificationInterval);
       notificationInterval = null;
@@ -1353,7 +1351,6 @@ function updateWorkflowButtons(rec) {
   document.getElementById('btnApprove').classList.toggle('hidden', !(canApprove() && ['Submitted', 'Under Review'].includes(status)));
   document.getElementById('btnApproveComment').classList.toggle('hidden', !(canApprove() && ['Submitted', 'Under Review'].includes(status)));
   document.getElementById('btnReject').classList.toggle('hidden', !(canApprove() && ['Submitted', 'Under Review'].includes(status)));
-  document.getElementById('btnClose').classList.toggle('hidden', !(canApprove() && ['Approved', 'Approved with Comment'].includes(status)));
 
   // Update linked checklists display
   const rfiNo = rec?.meta?.rfiNo || rec?.id || '';
@@ -1458,18 +1455,6 @@ function rejectRFI() {
   persistDb();
   updateWorkflowButtons(rec);
   toast(`❌ RFI rejected${linkedCount ? ` with ${linkedCount} linked checklist(s)` : ''}`);
-}
-
-function closeRFI() {
-  const rec = currentRecord();
-  if (!rec) { toast('⚠️ Open record first'); return; }
-  rec.status = 'Closed';
-  rec.comment = document.getElementById('wfComment').value.trim();
-  rec.audit.push(getAuditNow('Closed', rec.comment));
-  rec.savedAt = new Date().toISOString();
-  persistDb();
-  updateWorkflowButtons(rec);
-  toast('🔒 RFI closed');
 }
 
 function applyLinkedChecklistAction(parentRec, nextStatus, auditAction) {
@@ -1590,18 +1575,19 @@ function deleteReport(id) {
 function updateStats() {
   const rows = visibleReports();
   const rfis = rows.filter(r => r.templateKey === 'rfi');
-  const submittedPool = rfis.filter(r => ['Submitted', 'Under Review', 'Approved', 'Approved with Comment', 'Rejected', 'Closed'].includes(r.status));
-  const approvedOnly = rfis.filter(r => r.status === 'Approved').length;
+  
+  // Merge Closed into Approved
+  const approvedOnly = rfis.filter(r => r.status === 'Approved' || r.status === 'Closed').length;
   const approvedWithComment = rfis.filter(r => r.status === 'Approved with Comment').length;
-  const closedCount = rfis.filter(r => r.status === 'Closed').length;
-  const approvalPct = submittedPool.length ? Math.round(((approvedOnly + approvedWithComment) / submittedPool.length) * 100) : 0;
+  const allApproved = approvedOnly + approvedWithComment;
+  const submittedPool = rfis.filter(r => ['Submitted', 'Under Review', 'Approved', 'Approved with Comment', 'Rejected', 'Closed'].includes(r.status));
+  const approvalPct = submittedPool.length ? Math.round((allApproved / submittedPool.length) * 100) : 0;
 
   document.getElementById('totalRfiRaised').innerText = rfis.length;
   document.getElementById('avgCompliance').innerText = approvalPct + '%';
   document.getElementById('pendingRfi').innerText = rfis.filter(r => ['Draft', 'Submitted', 'Under Review'].includes(r.status)).length;
   document.getElementById('approvedRfi').innerText = approvedOnly;
   document.getElementById('approvedCommentRfi').innerText = approvedWithComment;
-  document.getElementById('closedRfi').innerText = closedCount;
   document.getElementById('rejectedRfi').innerText = rfis.filter(r => r.status === 'Rejected').length;
 
   if (currentKpiFilter) filterKPI(currentKpiFilter);
@@ -1670,6 +1656,7 @@ function renderHistory() {
     const linkedKey = r.meta?.rfiNo || r.id;
     const linkedList = checklistMap.get(linkedKey) || [];
     const scoreBadge = typeof r.score === 'number' ? `<span class="badge ${r.score < 60 ? 'bad' : r.score < 85 ? 'mid' : 'ok'}">${r.score}%</span>` : '<span class="badge mid">N/A</span>';
+    const statusDisplay = r.status === 'Closed' ? 'Approved' : r.status;
     const tr = document.createElement('tr');
     tr.className = 'parent-rfi-row';
     tr.innerHTML = `
@@ -1677,7 +1664,7 @@ function renderHistory() {
       <td><b>${esc(r.templateName)}</b><br><span class="small">${esc(r.formatNo)}</span></td>
       <td>${esc(r.titleLoc || '-')}</td>
       <td>${esc(r.preparedBy || '-')}<br><span class="small">Owner: ${esc(r.createdByDisplay || '-')}</span><br><span class="small">Linked: ${linkedList.length}</span></td>
-      <td>${badgeForStatus(r.status || 'Draft')}</td>
+      <td>${badgeForStatus(statusDisplay)}</td>
       <td>${r.defectsCount || 0}</td>
       <td>${scoreBadge}</td>
       <td><button class="btn btn-secondary" style="padding:6px 10px;font-size:12px;" onclick="openRecord('${r.id}')">Open</button> ${canDeleteRecord(r) ? `<button class="btn btn-danger" style="padding:6px 10px;font-size:12px;" onclick="deleteReport('${r.id}')">Delete</button>` : ''}</td>`;
@@ -1685,6 +1672,7 @@ function renderHistory() {
     
     linkedList.forEach(chk => {
       const chkScoreBadge = typeof chk.score === 'number' ? `<span class="badge ${chk.score < 60 ? 'bad' : chk.score < 85 ? 'mid' : 'ok'}">${chk.score}%</span>` : '<span class="badge mid">N/A</span>';
+      const chkStatusDisplay = chk.status === 'Closed' ? 'Approved' : chk.status;
       const child = document.createElement('tr');
       child.className = 'child-row';
       child.innerHTML = `
@@ -1692,7 +1680,7 @@ function renderHistory() {
         <td style="padding-left:28px;"><span class="small">↳ Linked Checklist</span><br><b>${esc(chk.templateName)}</b><br><span class="small">${esc(chk.formatNo)}</span></td>
         <td>${esc(chk.titleLoc || '-')}<br><span class="small">Linked to: ${esc(chk.meta?.linkedRfi || '-')}</span></td>
         <td>${esc(chk.preparedBy || '-')}<br><span class="small">Owner: ${esc(chk.createdByDisplay || '-')}</span></td>
-        <td>${badgeForStatus(chk.status || 'Closed')}</td>
+        <td>${badgeForStatus(chkStatusDisplay)}</td>
         <td>${chk.defectsCount || 0}</td>
         <td>${chkScoreBadge}</td>
         <td><button class="btn btn-secondary" style="padding:6px 10px;font-size:12px;" onclick="openRecord('${chk.id}')">Open</button> ${canDeleteRecord(chk) ? `<button class="btn btn-danger" style="padding:6px 10px;font-size:12px;" onclick="deleteReport('${chk.id}')">Delete</button>` : ''}</td>`;
@@ -1703,13 +1691,14 @@ function renderHistory() {
   // Show unlinked checklists
   checklistRows.filter(chk => !checklistMap.get(chk.meta?.linkedRfi || '__unlinked__')?.includes(chk)).forEach(chk => {
     const chkScoreBadge = typeof chk.score === 'number' ? `<span class="badge ${chk.score < 60 ? 'bad' : chk.score < 85 ? 'mid' : 'ok'}">${chk.score}%</span>` : '<span class="badge mid">N/A</span>';
+    const chkStatusDisplay = chk.status === 'Closed' ? 'Approved' : chk.status;
     const child = document.createElement('tr');
     child.innerHTML = `
       <td>${fmtDate(chk.meta?.date || chk.savedAt)}</td>
       <td><b>${esc(chk.templateName)}</b><br><span class="small">${esc(chk.formatNo)}</span></td>
       <td>${esc(chk.titleLoc || '-')}<br><span class="small">${chk.meta?.linkedRfi ? 'Linked to: ' + esc(chk.meta?.linkedRfi) : 'Not linked'}</span></td>
       <td>${esc(chk.preparedBy || '-')}<br><span class="small">Owner: ${esc(chk.createdByDisplay || '-')}</span></td>
-      <td>${badgeForStatus(chk.status || 'Closed')}</td>
+      <td>${badgeForStatus(chkStatusDisplay)}</td>
       <td>${chk.defectsCount || 0}</td>
       <td>${chkScoreBadge}</td>
       <td><button class="btn btn-secondary" style="padding:6px 10px;font-size:12px;" onclick="openRecord('${chk.id}')">Open</button> ${canDeleteRecord(chk) ? `<button class="btn btn-danger" style="padding:6px 10px;font-size:12px;" onclick="deleteReport('${chk.id}')">Delete</button>` : ''}</td>`;
@@ -1724,16 +1713,15 @@ function kpiLabel(type) {
   const map = {
     total: 'All RFI', approval: 'Approved + Approved with Comment',
     pending: 'Pending RFI', approved: 'Approved RFI',
-    approved_comment: 'Approved with Comment', closed: 'Closed RFI', rejected: 'Rejected RFI'
+    approved_comment: 'Approved with Comment', rejected: 'Rejected RFI'
   };
   return map[type] || 'Filtered RFI';
 }
 
 function kpiStatusClass(status) {
-  if (status === 'Approved') return 'approved';
+  if (status === 'Approved' || status === 'Closed') return 'approved';
   if (status === 'Approved with Comment') return 'comment';
   if (status === 'Rejected') return 'rejected';
-  if (status === 'Closed') return 'closed';
   return 'pending';
 }
 
@@ -1750,9 +1738,8 @@ function filterKPI(type) {
   if (type === 'total') filtered = rfis;
   if (type === 'approval') filtered = rfis.filter(r => ['Approved', 'Approved with Comment'].includes(r.status));
   if (type === 'pending') filtered = rfis.filter(r => ['Draft', 'Submitted', 'Under Review'].includes(r.status));
-  if (type === 'approved') filtered = rfis.filter(r => r.status === 'Approved');
+  if (type === 'approved') filtered = rfis.filter(r => r.status === 'Approved' || r.status === 'Closed');
   if (type === 'approved_comment') filtered = rfis.filter(r => r.status === 'Approved with Comment');
-  if (type === 'closed') filtered = rfis.filter(r => r.status === 'Closed');
   if (type === 'rejected') filtered = rfis.filter(r => r.status === 'Rejected');
   currentKpiFilter = type;
   currentKpiRows = filtered.slice();
@@ -1775,16 +1762,18 @@ function renderKPIResults(data, type = 'total') {
     body.innerHTML = '<tr><td colspan="6" class="kpi-empty">No data found for this KPI.</td></tr>';
     return;
   }
-  body.innerHTML = data.map(r => `
+  body.innerHTML = data.map(r => {
+    const statusDisplay = r.status === 'Closed' ? 'Approved' : r.status;
+    return `
     <tr>
       <td><b>${esc(r.meta?.rfiNo || '-')}</b></td>
       <td>${esc(r.meta?.project || r.titleLoc || '-')}</td>
-      <td><span class="kpi-status ${kpiStatusClass(r.status || '')}">${esc(r.status || 'Draft')}</span></td>
+      <td><span class="kpi-status ${kpiStatusClass(r.status || '')}">${esc(statusDisplay || 'Draft')}</span></td>
       <td>${esc(r.createdByDisplay || '-')}</td>
       <td>${fmtDate(r.meta?.date || r.savedAt)}</td>
       <td><button class="btn btn-secondary" style="padding:6px 10px;font-size:12px;" onclick="openRecord('${r.id}')">Open</button></td>
     </tr>
-  `).join('');
+  `}).join('');
 }
 
 // ============================================
@@ -1842,8 +1831,9 @@ function printFilteredHistory() {
   if (!pw) { toast('Allow pop-up to print'); return; }
   let tableHtml = `<table><thead><tr><th>Date</th><th>Format</th><th>Project</th><th>Prepared By</th><th>Status</th><th>Defects</th><th>Compliance</th></tr></thead><tbody>`;
   rows.forEach(r => {
+    const statusDisplay = r.status === 'Closed' ? 'Approved' : r.status;
     const scoreBadge = typeof r.score === 'number' ? `${r.score}%` : 'N/A';
-    tableHtml += `<tr><td>${fmtDate(r.meta?.date || r.savedAt)}</td><td>${esc(r.templateName)}</td><td>${esc(r.titleLoc || '-')}</td><td>${esc(r.preparedBy || '-')}</td><td>${r.status || 'Draft'}</td><td>${r.defectsCount || 0}</td><td>${scoreBadge}</td></tr>`;
+    tableHtml += `<tr><td>${fmtDate(r.meta?.date || r.savedAt)}</td><td>${esc(r.templateName)}</td><td>${esc(r.titleLoc || '-')}</td><td>${esc(r.preparedBy || '-')}</td><td>${statusDisplay || 'Draft'}</td><td>${r.defectsCount || 0}</td><td>${scoreBadge}</td></tr>`;
   });
   tableHtml += '</tbody></table>';
   pw.document.write(`<html><head><title>Saved Records</title><style>body{font-family:Arial;padding:20px;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ccc;padding:8px;font-size:12px;}th{background:#f0f0f0;}@page{margin:12mm;}</style></head><body><h1>QA/QC Saved Records</h1><p>Generated: ${new Date().toLocaleString()}</p>${tableHtml}</body></html>`);
@@ -1938,7 +1928,6 @@ function init() {
     document.querySelectorAll('.auth-only').forEach(el => el.classList.remove('hidden'));
     switchView('dashboard');
     setActiveKpiCard('total');
-    // 🔔 START NOTIFICATION CHECKER IF QA HEAD (already logged in on page load)
     if (currentUser.role === 'qa_head') {
         startNotificationChecker();
     }
