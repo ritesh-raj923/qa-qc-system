@@ -374,7 +374,6 @@ header .sub { font-size: 13px; color: #555; }
     </div>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
       <span class="badge info" id="viewBadge">Not Logged In</span>
-      <!-- NOTIFICATION BELL -->
       <div class="notif-container" id="notifContainer" style="display:none;">
         <div class="notif-bell" id="notifBell" onclick="toggleNotifications()">🔔</div>
         <div class="notif-badge hidden" id="notifBadge">0</div>
@@ -394,7 +393,7 @@ header .sub { font-size: 13px; color: #555; }
     <div class="login-shell">
       <div class="login-wrap">
         <h2>🔐 Secure Sign In</h2>
-        <p>QA/QC Inspection Suite with multi-user workflow. Engineers submit RFIs, QA Heads review and approve.</p>
+        <p>QA/QC Inspection Suite with multi-user workflow. Engineers submit, QA Heads review & approve.</p>
         <div class="field">
           <label>Username</label>
           <input id="loginUser" placeholder="Enter username" value="engineer1">
@@ -425,11 +424,11 @@ header .sub { font-size: 13px; color: #555; }
   <div id="view-dashboard" class="view">
     <div class="dashboard-grid">
       <!-- RFI Stats -->
-      <div class="stat active-kpi" data-kpi="total" onclick="filterKPI('total')"><div class="label">📄 Total RFI Raised</div><div class="value" id="totalRfiRaised">0</div></div>
+      <div class="stat active-kpi" data-kpi="total" onclick="filterKPI('total')"><div class="label">📄 Total RFI</div><div class="value" id="totalRfiRaised">0</div></div>
       <div class="stat" data-kpi="approval" onclick="filterKPI('approval')"><div class="label">✅ RFI Approval %</div><div class="value" id="avgCompliance">0%</div></div>
       <div class="stat warn" data-kpi="pending" onclick="filterKPI('pending')"><div class="label">⏳ Pending RFI</div><div class="value" id="pendingRfi">0</div></div>
       <div class="stat ok" data-kpi="approved" onclick="filterKPI('approved')"><div class="label">✔️ Approved RFI</div><div class="value" id="approvedRfi">0</div></div>
-      <div class="stat" data-kpi="approved_comment" onclick="filterKPI('approved_comment')"><div class="label">📝 Approved with Comment</div><div class="value" id="approvedCommentRfi">0</div></div>
+      <div class="stat" data-kpi="approved_comment" onclick="filterKPI('approved_comment')"><div class="label">📝 RFI w/ Comment</div><div class="value" id="approvedCommentRfi">0</div></div>
       <div class="stat alert" data-kpi="rejected" onclick="filterKPI('rejected')"><div class="label">❌ Rejected RFI</div><div class="value" id="rejectedRfi">0</div></div>
       <!-- NCR Stats -->
       <div class="stat" data-kpi="ncr_total" onclick="filterKPI('ncr_total')"><div class="label">📋 NCR Total</div><div class="value" id="ncrTotal">0</div></div>
@@ -480,7 +479,7 @@ header .sub { font-size: 13px; color: #555; }
         <div class="field"><label>From Date</label><input id="fltDateFrom" type="date" onchange="renderHistory()"></div>
         <div class="field"><label>To Date</label><input id="fltDateTo" type="date" onchange="renderHistory()"></div>
         <div class="field"><label>Owner</label><input id="fltOwner" oninput="renderHistory()" placeholder="Filter by owner"></div>
-        <div class="field"><label>&nbsp;</label><button class="btn btn-primary" type="button" onclick="printFilteredHistory()">🖨️ Print RFI</button></div>
+        <div class="field"><label>&nbsp;</label><button class="btn btn-primary" type="button" onclick="printFilteredHistory()">🖨️ Print</button></div>
       </div>
       <div class="data-actions">
         <button class="btn btn-secondary" onclick="exportData()">📤 Export Data</button>
@@ -490,7 +489,7 @@ header .sub { font-size: 13px; color: #555; }
       </div>
       <table>
         <thead><tr><th>Saved Date</th><th>Format</th><th>Project / Structure</th><th>Prepared By</th><th>Status</th><th>Defects</th><th>Compliance</th><th>Action</th></tr></thead>
-        <tbody id="historyBody"><tr><td colspan="8" style="text-align:center;color:#666;">No records found. Create a new RFI from the dashboard.</td></tr></tbody>
+        <tbody id="historyBody"><tr><td colspan="8" style="text-align:center;color:#666;">No records found.</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -548,6 +547,8 @@ header .sub { font-size: 13px; color: #555; }
         <button id="btnApproveComment" class="btn btn-secondary hidden" onclick="approveWithCommentRecord()" type="button" style="margin-left:8px;">📝 Approve w/ Comment</button>
         <button id="btnReject" class="btn btn-danger hidden" onclick="rejectRecord()" type="button" style="margin-left:8px;">❌ Reject</button>
         <button id="btnClose" class="btn btn-primary hidden" onclick="closeRecord()" type="button" style="margin-left:8px;">🔒 Close</button>
+        <!-- 🆕 Raise NCR Button – independent of workflow -->
+        <button id="btnRaiseNCR" class="btn btn-secondary hidden" onclick="raiseNCRFromRFI()" type="button" style="margin-left:8px;">📋 Raise NCR</button>
       </div>
       <div class="progressbox">
         <div class="small">Completion Progress</div>
@@ -616,15 +617,11 @@ let pendingParentMeta = null;
 let currentKpiFilter = 'total';
 let currentKpiRows = [];
 
-// ============================================
-// NOTIFICATIONS (Persistent)
-// ============================================
+// Notifications
 let notifications = [];
 let notificationInterval = null;
 
-// ============================================
-// USERS (5 Engineers + QA Head + others)
-// ============================================
+// Users
 const users = [
   { u: 'engineer1', p: 'Eng123', role: 'engineer', name: 'Engineer 1' },
   { u: 'engineer2', p: 'Eng456', role: 'engineer', name: 'Engineer 2' },
@@ -638,14 +635,14 @@ const users = [
 ];
 
 // ============================================
-// TEMPLATES (including NCR)
+// TEMPLATES (RFI, Checklists, NCR, IMIR)
 // ============================================
 const templates = {
   rfi: {
     formatNo: 'QA / QC / SITE / 01',
     menuTitle: 'RFI',
     title: 'REQUEST FOR INSPECTION',
-    summary: 'Standard RFI with configurable branding, role/workflow, audit trail and approvals.',
+    summary: 'Standard RFI with workflow and approvals.',
     metaRows: [
       [{ l: 'Project :-', k: 'project', d: 'Project Name' }, { l: 'RFI No.:', k: 'rfiNo' }],
       [{ l: 'Package :-', k: 'package' }, { l: 'RFI Rev.No.:', k: 'rfiRev' }],
@@ -733,9 +730,7 @@ const templates = {
       { type: 'signatures', title: 'Signatures', roles: ['Contractor Representative', 'Client Representative'] }
     ]
   },
-  // ============================================
-  // NCR TEMPLATE
-  // ============================================
+  // ===== NCR =====
   ncr: {
     formatNo: 'ADANI/Q/F-09 Rev 0',
     menuTitle: 'NCR',
@@ -748,7 +743,8 @@ const templates = {
       [{ l: 'WBS Code:', k: 'wbsCode' }, { l: 'Location:', k: 'location' }],
       [{ l: 'PO/SO Name:', k: 'poSoName' }, { l: 'Discipline:', k: 'discipline' }],
       [{ l: 'PO/SO No.:', k: 'poSoNo' }, { l: 'NCR Date:', k: 'ncrDate', t: 'date' }],
-      [{ l: 'PO/SO Date:', k: 'poSoDate', t: 'date' }, { l: 'Material/Service:', k: 'materialService' }]
+      [{ l: 'PO/SO Date:', k: 'poSoDate', t: 'date' }, { l: 'Material/Service:', k: 'materialService' }],
+      [{ l: 'Raised from RFI:', k: 'raisedFromRfi' }]
     ],
     sections: [
       { type: 'table', title: 'Description of Material', columns: ['Description of Material', 'ID/ Tag', 'Quantity', 'UoM'], rows: 4 },
@@ -767,6 +763,26 @@ const templates = {
       { type: 'textarea', title: 'Verification of Corrective Action' },
       { type: 'text', title: 'Code', k: 'code' },
       { type: 'signatures', title: 'Disposal Approved by', roles: ['Name', 'Signature', 'Date'] }
+    ]
+  },
+  // ===== IMIR (Material Approval) =====
+  imir: {
+    formatNo: 'QA/QC/IMIR-01',
+    menuTitle: 'IMIR',
+    title: 'MATERIAL APPROVAL',
+    summary: 'Material Approval Submittal (IMIR) for client approval.',
+    metaRows: [
+      [{ l: 'Client:', k: 'client', d: 'M/s Adani Entreprises Ltd' }, { l: 'Package/System:', k: 'package' }],
+      [{ l: 'Location:', k: 'location' }, { l: 'Date :', k: 'date', t: 'date' }],
+      [{ l: 'Drawing No.:', k: 'drawingNo' }, { l: 'Status:', k: 'status', t: 'select', options: ['Approved (A)', 'Approved As Noted (B)', 'Not Approved (C)'] }],
+      [{ l: 'To:', k: 'to', d: 'FQA Head Adani' }, { l: 'Subject:', k: 'subject' }]
+    ],
+    sections: [
+      { type: 'table', title: 'Material Submittal List', columns: ['Sl. No', 'Material Description', 'Manufacturer', 'Supplier', 'Structure of Indent use', 'Status (A/B/C)'], rows: 5 },
+      { type: 'textarea', title: 'Relevant Drawing:-' },
+      { type: 'textarea', title: 'Relevant Specification No.:-' },
+      { type: 'textarea', title: 'Remarks' },
+      { type: 'signatures', title: 'Signatory', roles: ['Merit Execution', 'Merit QA/QC', 'Adani Execution', 'Adani FQA', 'Adani QA/QC'] }
     ]
   }
 };
@@ -823,13 +839,8 @@ function canAddChecklistToRfi(rec) {
 
 function badgeForStatus(s) {
   const map = {
-    'Approved': 'ok',
-    'Approved with Comment': 'mid',
-    'Rejected': 'bad',
-    'Submitted': 'mid',
-    'Under Review': 'mid',
-    'Closed': 'ok',
-    'Draft': 'info'
+    'Approved': 'ok', 'Approved with Comment': 'mid', 'Rejected': 'bad',
+    'Submitted': 'mid', 'Under Review': 'mid', 'Closed': 'ok', 'Draft': 'info'
   };
   const cls = map[s] || 'info';
   return `<span class="badge ${cls}">${esc(s || 'Draft')}</span>`;
@@ -858,12 +869,8 @@ function getProjectDisplay() {
 // ============================================
 // NOTIFICATION FUNCTIONS
 // ============================================
-
 function loadNotifications() {
-  try {
-    const data = JSON.parse(localStorage.getItem(NOTIFICATION_KEY) || '[]');
-    notifications = data;
-  } catch (e) { notifications = []; }
+  try { notifications = JSON.parse(localStorage.getItem(NOTIFICATION_KEY) || '[]'); } catch(e) { notifications = []; }
 }
 
 function saveNotifications() {
@@ -876,7 +883,7 @@ function sendNotification(recipientUsername, message, type, rfiId, rfiNo, sender
     id: 'notif_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
     recipientUsername: recipientUsername,
     message: message,
-    type: type, // 'new_rfi', 'approved', 'rejected', 'under_review', 'approved_comment', 'closed_ncr', 'new_ncr'
+    type: type,
     rfiId: rfiId,
     rfiNo: rfiNo || 'Unknown',
     senderName: senderName || currentUser?.display || 'System',
@@ -887,33 +894,18 @@ function sendNotification(recipientUsername, message, type, rfiId, rfiNo, sender
   if (notifications.length > 200) notifications = notifications.slice(0, 200);
   saveNotifications();
   if (currentUser && currentUser.username === recipientUsername) {
-    const iconMap = {
-      'new_rfi': '🔔',
-      'approved': '✅',
-      'rejected': '❌',
-      'under_review': '🔍',
-      'approved_comment': '📝',
-      'new_ncr': '📋',
-      'closed_ncr': '🔒'
-    };
+    const iconMap = { 'new_rfi': '🔔', 'approved': '✅', 'rejected': '❌', 'under_review': '🔍', 'approved_comment': '📝', 'new_ncr': '📋', 'closed_ncr': '🔒' };
     const icon = iconMap[type] || '📢';
     toast(icon + ' ' + message);
     if (Notification.permission === 'granted') {
       new Notification(icon + ' ' + message, { body: 'Tap to open', icon: '🔔' });
     }
   }
-  if (currentUser && currentUser.username === recipientUsername) {
-    updateNotificationUI();
-  }
+  if (currentUser && currentUser.username === recipientUsername) { updateNotificationUI(); }
 }
 
-function getNotificationsForUser(username) {
-  return notifications.filter(n => n.recipientUsername === username);
-}
-
-function getUnreadCount(username) {
-  return notifications.filter(n => n.recipientUsername === username && !n.read).length;
-}
+function getNotificationsForUser(username) { return notifications.filter(n => n.recipientUsername === username); }
+function getUnreadCount(username) { return notifications.filter(n => n.recipientUsername === username && !n.read).length; }
 
 function markNotificationRead(notifId) {
   const notif = notifications.find(n => n.id === notifId);
@@ -935,28 +927,18 @@ function toggleNotifications() {
 }
 
 function updateNotificationUI() {
-  if (!currentUser) {
-    document.getElementById('notifContainer').style.display = 'none';
-    return;
-  }
+  if (!currentUser) { document.getElementById('notifContainer').style.display = 'none'; return; }
   document.getElementById('notifContainer').style.display = 'block';
   const count = getUnreadCount(currentUser.username);
   const badge = document.getElementById('notifBadge');
-  if (count > 0) {
-    badge.textContent = count > 99 ? '99+' : count;
-    badge.classList.remove('hidden');
-  } else {
-    badge.classList.add('hidden');
-  }
+  if (count > 0) { badge.textContent = count > 99 ? '99+' : count; badge.classList.remove('hidden'); }
+  else { badge.classList.add('hidden'); }
 }
 
 function renderNotificationList() {
   const list = document.getElementById('notifList');
   const userNotifs = getNotificationsForUser(currentUser.username);
-  if (userNotifs.length === 0) {
-    list.innerHTML = '<div class="notif-empty">✨ No notifications yet</div>';
-    return;
-  }
+  if (userNotifs.length === 0) { list.innerHTML = '<div class="notif-empty">✨ No notifications yet</div>'; return; }
   list.innerHTML = userNotifs.map(n => `
     <div class="notif-item ${n.read ? '' : 'unread'}" onclick="handleNotificationClick('${n.id}', '${n.rfiId}')">
       <div class="notif-icon">${getNotifIcon(n.type)}</div>
@@ -970,15 +952,7 @@ function renderNotificationList() {
 }
 
 function getNotifIcon(type) {
-  const map = {
-    'new_rfi': '🔔',
-    'approved': '✅',
-    'rejected': '❌',
-    'under_review': '🔍',
-    'approved_comment': '📝',
-    'new_ncr': '📋',
-    'closed_ncr': '🔒'
-  };
+  const map = { 'new_rfi': '🔔', 'approved': '✅', 'rejected': '❌', 'under_review': '🔍', 'approved_comment': '📝', 'new_ncr': '📋', 'closed_ncr': '🔒' };
   return map[type] || '📢';
 }
 
@@ -989,7 +963,7 @@ function handleNotificationClick(notifId, rfiId) {
 }
 
 // ============================================
-// STORAGE FUNCTIONS
+// STORAGE & SYNC
 // ============================================
 function loadDb() {
   try { savedReports = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch(e) { savedReports = []; }
@@ -1006,9 +980,7 @@ function persistDb() {
       body: JSON.stringify({ reports: savedReports, notifications: notifications })
     }).catch(() => {});
   } catch(e) {}
-  updateStats();
-  renderHistory();
-  updateNotificationUI();
+  updateStats(); renderHistory(); updateNotificationUI();
 }
 
 async function loadFromServer() {
@@ -1038,8 +1010,7 @@ function saveConfig(ev) {
     businessPackage: document.getElementById('cfgBusinessPackage').value.trim() || 'Site Formats'
   };
   localStorage.setItem(CONFIG_KEY, JSON.stringify(appConfig));
-  applyConfig();
-  toast('✅ Configuration saved');
+  applyConfig(); toast('✅ Configuration saved');
 }
 
 function resetConfig() {
@@ -1063,18 +1034,14 @@ function saveMasters(ev) {
 function resetMasters() {
   masters = { disciplines: ['Civil', 'Mechanical', 'Electrical'] };
   localStorage.setItem(MASTER_KEY, JSON.stringify(masters));
-  populateMastersForm();
-  toast('↩️ Master data reset');
+  populateMastersForm(); toast('↩️ Master data reset');
 }
 
-function loadSession() {
-  try { currentUser = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch(e) { currentUser = null; }
-}
-
+function loadSession() { try { currentUser = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch(e) { currentUser = null; } }
 function saveSession() { localStorage.setItem(SESSION_KEY, JSON.stringify(currentUser)); }
 
 // ============================================
-// AUTH FUNCTIONS
+// AUTH
 // ============================================
 function login() {
   const u = document.getElementById('loginUser').value.trim();
@@ -1139,7 +1106,7 @@ function populateMastersForm() {
 }
 
 // ============================================
-// VIEW NAVIGATION
+// VIEWS
 // ============================================
 function switchView(view) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -1154,9 +1121,7 @@ function switchView(view) {
     if (currentUser) {
       const roleMap = { engineer: '👷 Engineer', qa_head: '👔 QA Head', manager: '📊 Manager', admin: '🔧 Admin', consultant: '👀 Consultant' };
       badge.innerText = roleMap[currentUser.role] || 'System Active';
-    } else {
-      badge.innerText = '🔒 Not Logged In';
-    }
+    } else { badge.innerText = '🔒 Not Logged In'; }
   }
   if (view === 'dashboard') { updateStats(); renderCards(); if (currentKpiFilter) filterKPI(currentKpiFilter); }
   if (view === 'history') { renderHistory(); }
@@ -1178,7 +1143,7 @@ function backFromForm() {
 }
 
 // ============================================
-// CARD RENDERING
+// CARDS
 // ============================================
 function renderCards() {
   const host = document.getElementById('templateCards');
@@ -1196,7 +1161,7 @@ function renderCards() {
       <p>${esc(t.summary)}</p>
       <div class="foot">
         <span>${esc(buildFormatNo(t.formatNo))}</span>
-        <span>${t.menuTitle === 'RFI' ? '10 lines' : (t.menuTitle === 'NCR' ? '20 lines' : '19 lines')}</span>
+        <span>${t.menuTitle === 'RFI' ? '10 lines' : t.menuTitle === 'NCR' ? '20 lines' : t.menuTitle === 'IMIR' ? '15 lines' : '19 lines'}</span>
       </div>`;
     c.onclick = () => openTemplate(k);
     host.appendChild(c);
@@ -1204,7 +1169,7 @@ function renderCards() {
 }
 
 // ============================================
-// FORM RENDERING (support NCR special sections)
+// FORM RENDERING (Extended for NCR & IMIR)
 // ============================================
 function makeInput(id, value, type = 'text', options = []) {
   if (type === 'select') {
@@ -1223,13 +1188,11 @@ function renderMetaRows(metaRows, metaData = {}) {
       let type = cell.t || 'text';
       let opts = cell.options || [];
       if (cell.k === 'discipline') {
-        type = 'select';
-        opts = masters.disciplines.length ? masters.disciplines : ['Civil', 'Mechanical', 'Electrical'];
+        type = 'select'; opts = masters.disciplines.length ? masters.disciplines : ['Civil', 'Mechanical', 'Electrical'];
         if (!val) val = opts[0] || '';
       }
       if (cell.k === 'linkedRfi') {
-        type = 'select';
-        opts = getRfiOptions();
+        type = 'select'; opts = getRfiOptions();
         if (!val && opts.length) val = opts[0] || '';
       }
       html += `<td class="label-cell">${esc(cell.l)}</td><td>${makeInput('meta_' + cell.k, val, type, opts)}</td>`;
@@ -1400,10 +1363,7 @@ function collectSections(t) {
       const items = [];
       Array.from(tbl.querySelectorAll('tr')).slice(1).forEach(r => {
         if (r.classList.contains('check-section-row')) return;
-        items.push({
-          status: r.cells[2]?.querySelector('select')?.value || '',
-          remarks: r.cells[3]?.querySelector('textarea')?.value || ''
-        });
+        items.push({ status: r.cells[2]?.querySelector('select')?.value || '', remarks: r.cells[3]?.querySelector('textarea')?.value || '' });
       });
       sections.push({ type: 'checklist', items });
     }
@@ -1467,7 +1427,7 @@ function updateProgress() {
 }
 
 // ============================================
-// SAVE & WORKFLOW FUNCTIONS
+// SAVE & WORKFLOW
 // ============================================
 function validateForm(meta) {
   const req = [];
@@ -1483,6 +1443,10 @@ function validateForm(meta) {
     if (!meta.ncrNo) req.push('NCR No.');
     if (!meta.agency) req.push('Agency');
     if (!meta.ncrDate) req.push('NCR Date');
+  } else if (activeTemplateKey === 'imir') {
+    if (!meta.project) req.push('Project');
+    if (!meta.package) req.push('Package/System');
+    if (!meta.date) req.push('Date');
   } else {
     if (!meta.project) req.push('Project');
     if (!meta.contractor) req.push('Contractor');
@@ -1496,9 +1460,7 @@ function getAuditNow(action, comment) {
   return { action, by: currentUser?.display || 'Unknown', role: currentUser?.role || '', at: new Date().toISOString(), comment: comment || '' };
 }
 
-function currentRecord() {
-  return activeReportId ? savedReports.find(r => r.id === activeReportId) : null;
-}
+function currentRecord() { return activeReportId ? savedReports.find(r => r.id === activeReportId) : null; }
 
 function saveReport(ev) {
   ev.preventDefault();
@@ -1510,14 +1472,14 @@ function saveReport(ev) {
   const existing = activeReportId ? savedReports.find(r => r.id === activeReportId) : null;
   const id = activeReportId || ('rep_' + Date.now());
   const titleLoc = meta.building || meta.structure || meta.location || meta.project || getProjectDisplay();
-  const preparedBy = meta.preparedBy || meta.raisedBy || meta.contractor || meta.agency || '';
+  const preparedBy = meta.preparedBy || meta.raisedBy || meta.contractor || meta.agency || meta.to || '';
   const attachmentInput = document.getElementById('wfAttachment');
   const attachmentNames = attachmentInput ? Array.from(attachmentInput.files || []).map(f => f.name) : (existing?.attachments || []);
   const row = {
     id, templateKey: activeTemplateKey, templateName: t.title,
     formatNo: buildFormatNo(t.formatNo), meta, sections,
     score: 0, defectsCount: 0, titleLoc, preparedBy,
-    status: existing?.status || (activeTemplateKey === 'rfi' ? 'Draft' : 'Draft'),
+    status: existing?.status || 'Draft',
     comment: document.getElementById('wfComment')?.value.trim() || existing?.comment || '',
     attachments: attachmentNames,
     createdBy: existing?.createdBy || currentUser?.username || '',
@@ -1527,20 +1489,16 @@ function saveReport(ev) {
     savedAt: new Date().toISOString(),
     audit: (existing?.audit || []).concat([getAuditNow(existing ? 'Updated' : 'Created', document.getElementById('wfComment')?.value.trim() || '')])
   };
-  
   let yes = 0, no = 0;
   sections.forEach(sec => {
     if (sec.type === 'checklist' || sec.type === 'simple_check') {
-      (sec.items || []).forEach(i => {
-        if (i.status === 'Yes') yes++;
-        if (i.status === 'No') no++;
-      });
+      (sec.items || []).forEach(i => { if (i.status === 'Yes') yes++; if (i.status === 'No') no++; });
     }
   });
   row.score = (yes + no) ? Math.round((yes / (yes + no)) * 100) : 100;
   row.defectsCount = no;
 
-  if (activeTemplateKey !== 'rfi' && activeTemplateKey !== 'ncr' && !row.meta.linkedRfi) {
+  if (activeTemplateKey !== 'rfi' && activeTemplateKey !== 'ncr' && activeTemplateKey !== 'imir' && !row.meta.linkedRfi) {
     toast('⚠️ Please select Linked RFI No before saving checklist');
     return;
   }
@@ -1553,11 +1511,7 @@ function saveReport(ev) {
   if (activeTemplateKey === 'rfi') {
     pendingReturnRfiId = id;
     pendingLinkedRfiNo = row.meta?.rfiNo || pendingLinkedRfiNo;
-    pendingParentMeta = {
-      project: meta.project, package: meta.package,
-      contractor: meta.contractor, projectCode: meta.projectCode,
-      date: meta.date
-    };
+    pendingParentMeta = { project: meta.project, package: meta.package, contractor: meta.contractor, projectCode: meta.projectCode, date: meta.date };
   }
   updateWorkflowButtons(row);
   setChecklistButtonsState(activeTemplateKey === 'rfi' ? row : null);
@@ -1567,11 +1521,12 @@ function saveReport(ev) {
 function updateWorkflowButtons(rec) {
   const isRfi = activeTemplateKey === 'rfi';
   const isNcr = activeTemplateKey === 'ncr';
+  const isImir = activeTemplateKey === 'imir';
   const panel = document.getElementById('workflowPanel');
   const relatedPanel = document.getElementById('relatedChecklistPanel');
-  if (panel) panel.style.display = (isRfi || isNcr) ? 'block' : 'none';
+  if (panel) panel.style.display = (isRfi || isNcr || isImir) ? 'block' : 'none';
   if (relatedPanel) relatedPanel.style.display = isRfi ? 'block' : 'none';
-  if (!isRfi && !isNcr) return;
+  if (!isRfi && !isNcr && !isImir) return;
 
   const status = rec?.status || 'Draft';
   document.getElementById('wfStatus').value = status;
@@ -1580,33 +1535,22 @@ function updateWorkflowButtons(rec) {
 
   const showSubmit = currentUser && ['engineer', 'admin'].includes(currentUser.role) && (!rec || ['Draft', 'Rejected'].includes(status));
   const showReview = canApprove() && status === 'Submitted';
-  const showApprove = canApprove() && ['Submitted', 'Under Review'].includes(status);
+  const showApprove = canApprove() && ['Submitted', 'Under Review'].includes(status) && (isRfi || isImir);
   const showReject = canApprove() && ['Submitted', 'Under Review'].includes(status);
   const showClose = canApprove() && ['Submitted', 'Under Review', 'Approved', 'Approved with Comment'].includes(status) && isNcr;
 
+  // 🆕 Raise NCR button: visible only when viewing an RFI AND user is QA Head or Admin
+  const btnRaiseNCR = document.getElementById('btnRaiseNCR');
+  if (btnRaiseNCR) {
+    btnRaiseNCR.classList.toggle('hidden', !(isRfi && (currentUser?.role === 'qa_head' || currentUser?.role === 'admin')));
+  }
+
   document.getElementById('btnSubmit').classList.toggle('hidden', !showSubmit);
   document.getElementById('btnReview').classList.toggle('hidden', !showReview);
-  document.getElementById('btnApprove').classList.toggle('hidden', !(showApprove && isRfi));
+  document.getElementById('btnApprove').classList.toggle('hidden', !showApprove);
   document.getElementById('btnApproveComment').classList.toggle('hidden', !(showApprove && isRfi));
   document.getElementById('btnReject').classList.toggle('hidden', !showReject);
   document.getElementById('btnClose').classList.toggle('hidden', !showClose);
-
-  if (isRfi) {
-    const rfiNo = rec?.meta?.rfiNo || rec?.id || '';
-    const linked = getLinkedChecklistsForRfi(rfiNo);
-    const list = document.getElementById('relatedChecklistList');
-    if (list) {
-      if (!linked.length) list.innerHTML = 'No linked checklist yet.';
-      else {
-        list.innerHTML = linked.map(c => `
-          <div style="margin-bottom:8px;padding:8px 10px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
-            <div><b>${esc(c.templateName)}</b> · ${fmtDate(c.savedAt)}<br><span class="small">Status: ${esc(c.status || 'Draft')}</span></div>
-            <div><button type="button" class="btn btn-secondary" style="padding:6px 10px;font-size:12px;" onclick="openLinkedChecklistFromRfi('${c.id}','${rec?.id || ''}')">Open</button></div>
-          </div>
-        `).join('');
-      }
-    }
-  }
 }
 
 function setChecklistButtonsState(rec) {
@@ -1619,28 +1563,95 @@ function setChecklistButtonsState(rec) {
 }
 
 // ============================================
-// RFI/NCR WORKFLOW ACTIONS (with notifications)
+// 🆕 RAISE NCR FROM RFI (INDEPENDENT OF WORKFLOW)
 // ============================================
+function raiseNCRFromRFI() {
+  // Get the current RFI record
+  const rfi = currentRecord();
+  if (!rfi) {
+    toast('⚠️ No RFI found to raise NCR from.');
+    return;
+  }
 
+  // Check if user is QA Head or Admin
+  if (!currentUser || (currentUser.role !== 'qa_head' && currentUser.role !== 'admin')) {
+    toast('⛔ Only QA Head or Admin can raise NCR.');
+    return;
+  }
+
+  // Pre-fill NCR meta data from RFI
+  const rfiMeta = rfi.meta || {};
+  const ncrMeta = {
+    ncrNo: '',
+    category: '',
+    project: rfiMeta.project || '',
+    entityType: '',
+    package: rfiMeta.package || '',
+    agency: rfiMeta.contractor || '',
+    wbsCode: '',
+    location: rfiMeta.location || '',
+    poSoName: '',
+    discipline: rfiMeta.discipline || '',
+    poSoNo: '',
+    ncrDate: new Date().toISOString().split('T')[0],
+    poSoDate: '',
+    materialService: '',
+    raisedFromRfi: rfiMeta.rfiNo || rfi.id || ''
+  };
+
+  // Create a new NCR record
+  const ncrId = 'rep_' + Date.now();
+  const newNCR = {
+    id: ncrId,
+    templateKey: 'ncr',
+    templateName: 'NON CONFORMANCE REPORT',
+    formatNo: buildFormatNo('ADANI/Q/F-09 Rev 0'),
+    meta: ncrMeta,
+    sections: [],
+    score: 0,
+    defectsCount: 0,
+    titleLoc: rfiMeta.project || '',
+    preparedBy: currentUser.display || '',
+    status: 'Draft',
+    comment: '',
+    attachments: [],
+    createdBy: currentUser.username,
+    createdByDisplay: currentUser.display,
+    decisionBy: '',
+    decisionByDisplay: '',
+    savedAt: new Date().toISOString(),
+    audit: [getAuditNow('Created from RFI #' + (rfiMeta.rfiNo || rfi.id || ''), '')]
+  };
+
+  // Add the new NCR to savedReports
+  savedReports.unshift(newNCR);
+  persistDb();
+
+  toast('📋 NCR created from RFI #' + (rfiMeta.rfiNo || rfi.id || '') + ' – fill in the details and submit.');
+
+  // Navigate to the NCR form
+  openTemplate('ncr', ncrId);
+}
+
+// ============================================
+// WORKFLOW ACTIONS
+// ============================================
 function submitRecord() {
   const rec = currentRecord();
   if (!rec) { toast('⚠️ Save first'); return; }
   if (rec.status === 'Submitted') { toast('⚠️ Already submitted'); return; }
-  const prevStatus = rec.status;
   rec.status = 'Submitted';
   rec.comment = document.getElementById('wfComment').value.trim();
   rec.audit.push(getAuditNow('Submitted', rec.comment));
   rec.savedAt = new Date().toISOString();
   persistDb();
-  updateWorkflowButtons(rec);
-  setChecklistButtonsState(rec);
+  updateWorkflowButtons(rec); setChecklistButtonsState(rec);
   toast('📤 Submitted successfully');
-
-  const isNcr = rec.templateKey === 'ncr';
   const qaHeadUser = users.find(u => u.role === 'qa_head');
   if (qaHeadUser) {
+    const isNcr = rec.templateKey === 'ncr';
     const docNo = isNcr ? (rec.meta?.ncrNo || rec.id || 'Unknown') : (rec.meta?.rfiNo || rec.id || 'Unknown');
-    const typeLabel = isNcr ? 'NCR' : 'RFI';
+    const typeLabel = isNcr ? 'NCR' : (rec.templateKey === 'imir' ? 'IMIR' : 'RFI');
     const msg = `New ${typeLabel} #${docNo} submitted by ${currentUser.display}`;
     sendNotification(qaHeadUser.u, msg, isNcr ? 'new_ncr' : 'new_rfi', rec.id, docNo, currentUser.display);
   }
@@ -1652,15 +1663,12 @@ function markUnderReview() {
   rec.status = 'Under Review';
   rec.comment = document.getElementById('wfComment').value.trim();
   rec.audit.push(getAuditNow('Marked Under Review', rec.comment));
-  const linkedCount = applyLinkedChecklistAction(rec, 'Under Review', 'Marked Under Review with parent RFI');
   rec.savedAt = new Date().toISOString();
-  persistDb();
-  updateWorkflowButtons(rec);
-  toast(`🔍 Under review${linkedCount ? ` with ${linkedCount} linked checklist(s)` : ''}`);
+  persistDb(); updateWorkflowButtons(rec);
+  toast(`🔍 Under review`);
   if (rec.createdBy) {
     const docNo = rec.meta?.rfiNo || rec.id || 'Unknown';
-    const msg = `Your RFI #${docNo} is now Under Review by ${currentUser.display}`;
-    sendNotification(rec.createdBy, msg, 'under_review', rec.id, docNo, currentUser.display);
+    sendNotification(rec.createdBy, `Your RFI #${docNo} is now Under Review by ${currentUser.display}`, 'under_review', rec.id, docNo, currentUser.display);
   }
 }
 
@@ -1672,15 +1680,12 @@ function approveRecord() {
   rec.decisionBy = currentUser.username;
   rec.decisionByDisplay = currentUser.display;
   rec.audit.push(getAuditNow('Approved', rec.comment));
-  const linkedCount = applyLinkedChecklistAction(rec, 'Approved', 'Approved with parent RFI');
   rec.savedAt = new Date().toISOString();
-  persistDb();
-  updateWorkflowButtons(rec);
-  toast(`✅ Approved${linkedCount ? ` with ${linkedCount} linked checklist(s)` : ''}`);
+  persistDb(); updateWorkflowButtons(rec);
+  toast(`✅ Approved`);
   if (rec.createdBy) {
     const docNo = rec.meta?.rfiNo || rec.id || 'Unknown';
-    const msg = `Your RFI #${docNo} has been Approved by ${currentUser.display}`;
-    sendNotification(rec.createdBy, msg, 'approved', rec.id, docNo, currentUser.display);
+    sendNotification(rec.createdBy, `Your ${rec.templateKey === 'imir' ? 'IMIR' : 'RFI'} #${docNo} has been Approved by ${currentUser.display}`, 'approved', rec.id, docNo, currentUser.display);
   }
 }
 
@@ -1694,15 +1699,12 @@ function approveWithCommentRecord() {
   rec.decisionBy = currentUser.username;
   rec.decisionByDisplay = currentUser.display;
   rec.audit.push(getAuditNow('Approved with Comment', c));
-  const linkedCount = applyLinkedChecklistAction(rec, 'Approved with Comment', 'Approved with Comment with parent RFI');
   rec.savedAt = new Date().toISOString();
-  persistDb();
-  updateWorkflowButtons(rec);
-  toast(`📝 Approved with comment${linkedCount ? ` and ${linkedCount} linked checklist(s)` : ''}`);
+  persistDb(); updateWorkflowButtons(rec);
+  toast(`📝 Approved with comment`);
   if (rec.createdBy) {
     const docNo = rec.meta?.rfiNo || rec.id || 'Unknown';
-    const msg = `Your RFI #${docNo} has been Approved with Comment by ${currentUser.display}`;
-    sendNotification(rec.createdBy, msg, 'approved_comment', rec.id, docNo, currentUser.display);
+    sendNotification(rec.createdBy, `Your RFI #${docNo} has been Approved with Comment by ${currentUser.display}`, 'approved_comment', rec.id, docNo, currentUser.display);
   }
 }
 
@@ -1716,15 +1718,12 @@ function rejectRecord() {
   rec.decisionBy = currentUser.username;
   rec.decisionByDisplay = currentUser.display;
   rec.audit.push(getAuditNow('Rejected', c));
-  const linkedCount = applyLinkedChecklistAction(rec, 'Rejected', 'Rejected with parent RFI');
   rec.savedAt = new Date().toISOString();
-  persistDb();
-  updateWorkflowButtons(rec);
-  toast(`❌ Rejected${linkedCount ? ` with ${linkedCount} linked checklist(s)` : ''}`);
+  persistDb(); updateWorkflowButtons(rec);
+  toast(`❌ Rejected`);
   if (rec.createdBy) {
     const docNo = rec.meta?.rfiNo || rec.id || 'Unknown';
-    const msg = `Your RFI #${docNo} has been Rejected by ${currentUser.display}. Reason: ${c.substring(0, 60)}${c.length > 60 ? '...' : ''}`;
-    sendNotification(rec.createdBy, msg, 'rejected', rec.id, docNo, currentUser.display);
+    sendNotification(rec.createdBy, `Your ${rec.templateKey === 'imir' ? 'IMIR' : 'RFI'} #${docNo} has been Rejected by ${currentUser.display}`, 'rejected', rec.id, docNo, currentUser.display);
   }
 }
 
@@ -1735,29 +1734,12 @@ function closeRecord() {
   rec.comment = document.getElementById('wfComment').value.trim();
   rec.audit.push(getAuditNow('Closed', rec.comment));
   rec.savedAt = new Date().toISOString();
-  persistDb();
-  updateWorkflowButtons(rec);
+  persistDb(); updateWorkflowButtons(rec);
   toast('🔒 Closed');
   if (rec.createdBy && rec.templateKey === 'ncr') {
     const docNo = rec.meta?.ncrNo || rec.id || 'Unknown';
-    const msg = `Your NCR #${docNo} has been Closed by ${currentUser.display}`;
-    sendNotification(rec.createdBy, msg, 'closed_ncr', rec.id, docNo, currentUser.display);
+    sendNotification(rec.createdBy, `Your NCR #${docNo} has been Closed by ${currentUser.display}`, 'closed_ncr', rec.id, docNo, currentUser.display);
   }
-}
-
-function applyLinkedChecklistAction(parentRec, nextStatus, auditAction) {
-  const rfiNo = parentRec?.meta?.rfiNo || parentRec?.id || '';
-  if (!rfiNo) return 0;
-  const linked = savedReports.filter(r => r.templateKey !== 'rfi' && (r.meta?.linkedRfi || '') === rfiNo);
-  linked.forEach(chk => {
-    chk.status = nextStatus;
-    chk.comment = parentRec?.comment || chk.comment || '';
-    chk.decisionBy = currentUser?.username || chk.decisionBy || '';
-    chk.decisionByDisplay = currentUser?.display || chk.decisionByDisplay || '';
-    chk.savedAt = new Date().toISOString();
-    chk.audit = (chk.audit || []).concat([getAuditNow(auditAction, parentRec?.comment || '')]);
-  });
-  return linked.length;
 }
 
 // ============================================
@@ -1801,12 +1783,7 @@ function applyPendingChecklistPrefill() {
     const sel = document.getElementById('meta_linkedRfi');
     if (sel) {
       const exists = Array.from(sel.options).some(o => o.value === pendingLinkedRfiNo);
-      if (!exists) {
-        const opt = document.createElement('option');
-        opt.value = pendingLinkedRfiNo;
-        opt.textContent = pendingLinkedRfiNo;
-        sel.appendChild(opt);
-      }
+      if (!exists) { const opt = document.createElement('option'); opt.value = pendingLinkedRfiNo; opt.textContent = pendingLinkedRfiNo; sel.appendChild(opt); }
       sel.value = pendingLinkedRfiNo;
     }
   }
@@ -1856,7 +1833,7 @@ function deleteReport(id) {
 }
 
 // ============================================
-// DASHBOARD & STATS (with NCR stats)
+// STATS & DASHBOARD
 // ============================================
 function updateStats() {
   const rows = visibleReports();
@@ -1869,7 +1846,6 @@ function updateStats() {
   const allApproved = approvedOnly + approvedWithComment;
   const submittedPool = rfis.filter(r => ['Submitted', 'Under Review', 'Approved', 'Approved with Comment', 'Rejected', 'Closed'].includes(r.status));
   const approvalPct = submittedPool.length ? Math.round((allApproved / submittedPool.length) * 100) : 0;
-
   document.getElementById('totalRfiRaised').innerText = rfis.length;
   document.getElementById('avgCompliance').innerText = approvalPct + '%';
   document.getElementById('pendingRfi').innerText = rfis.filter(r => ['Draft', 'Submitted', 'Under Review'].includes(r.status)).length;
@@ -1880,9 +1856,8 @@ function updateStats() {
   // NCR stats
   const ncrTotal = ncrs.length;
   const ncrClosed = ncrs.filter(r => r.status === 'Closed').length;
-  const ncrOpen = ncrs.filter(r => r.status !== 'Closed').length;
+  const ncrOpen = ncrTotal - ncrClosed;
   const ncrClosedPct = ncrTotal ? Math.round((ncrClosed / ncrTotal) * 100) : 0;
-
   document.getElementById('ncrTotal').innerText = ncrTotal;
   document.getElementById('ncrOpen').innerText = ncrOpen;
   document.getElementById('ncrClosed').innerText = ncrClosed;
@@ -1892,110 +1867,6 @@ function updateStats() {
   updateNotificationUI();
 }
 
-// ============================================
-// KPI FILTERING (extended for NCR)
-// ============================================
-function kpiLabel(type) {
-  const map = {
-    total: 'All RFI',
-    approval: 'Approved + Approved with Comment',
-    pending: 'Pending RFI',
-    approved: 'Approved RFI',
-    approved_comment: 'Approved with Comment',
-    rejected: 'Rejected RFI',
-    ncr_total: 'All NCR',
-    ncr_open: 'Open NCR',
-    ncr_closed: 'Closed NCR',
-    ncr_closed_pct: 'NCR Closed %'
-  };
-  return map[type] || 'Filtered';
-}
-
-function kpiStatusClass(status) {
-  if (status === 'Approved' || status === 'Closed') return 'approved';
-  if (status === 'Approved with Comment') return 'comment';
-  if (status === 'Rejected') return 'rejected';
-  return 'pending';
-}
-
-function setActiveKpiCard(type) {
-  document.querySelectorAll('.dashboard-grid .stat[data-kpi]').forEach(card => {
-    card.classList.toggle('active-kpi', card.getAttribute('data-kpi') === type);
-  });
-}
-
-function filterKPI(type) {
-  const sourceRows = visibleReports();
-  let filtered = [];
-  let title = 'All Records';
-  let sub = 'Showing all records.';
-
-  // RFI filters
-  if (type === 'total' || type === 'approval' || type === 'pending' || type === 'approved' || type === 'approved_comment' || type === 'rejected') {
-    const rfis = sourceRows.filter(r => r.templateKey === 'rfi');
-    if (type === 'total') filtered = rfis;
-    else if (type === 'approval') filtered = rfis.filter(r => ['Approved', 'Approved with Comment'].includes(r.status));
-    else if (type === 'pending') filtered = rfis.filter(r => ['Draft', 'Submitted', 'Under Review'].includes(r.status));
-    else if (type === 'approved') filtered = rfis.filter(r => r.status === 'Approved' || r.status === 'Closed');
-    else if (type === 'approved_comment') filtered = rfis.filter(r => r.status === 'Approved with Comment');
-    else if (type === 'rejected') filtered = rfis.filter(r => r.status === 'Rejected');
-    title = 'RFI List';
-    sub = 'Showing RFI records that match the selected filter.';
-  }
-  // NCR filters
-  else if (type === 'ncr_total' || type === 'ncr_open' || type === 'ncr_closed' || type === 'ncr_closed_pct') {
-    const ncrs = sourceRows.filter(r => r.templateKey === 'ncr');
-    if (type === 'ncr_total') filtered = ncrs;
-    else if (type === 'ncr_open') filtered = ncrs.filter(r => r.status !== 'Closed');
-    else if (type === 'ncr_closed' || type === 'ncr_closed_pct') filtered = ncrs.filter(r => r.status === 'Closed');
-    title = 'NCR List';
-    sub = 'Showing NCR records that match the selected filter.';
-  }
-
-  currentKpiFilter = type;
-  currentKpiRows = filtered.slice();
-  renderKPIResults(filtered, type, title, sub);
-  setActiveKpiCard(type);
-}
-
-function renderKPIResults(data, type, customTitle, customSub) {
-  const body = document.getElementById('kpiResultBody');
-  const chip = document.getElementById('kpiActiveFilterChip');
-  const count = document.getElementById('kpiRecordCount');
-  const title = document.getElementById('kpiPanelTitle');
-  const sub = document.getElementById('kpiPanelSub');
-
-  if (chip) chip.textContent = 'Active Filter: ' + kpiLabel(type);
-  if (count) count.textContent = data.length + (data.length === 1 ? ' record' : ' records');
-  if (title) title.textContent = customTitle || 'All Records';
-  if (sub) sub.textContent = customSub || 'Showing records.';
-
-  if (!body) return;
-  if (!data.length) {
-    body.innerHTML = '<tr><td colspan="7" class="kpi-empty">No records found for this filter.</td></tr>';
-    return;
-  }
-
-  body.innerHTML = data.map(r => {
-    const idDisplay = r.templateKey === 'rfi' ? (r.meta?.rfiNo || '-') : (r.meta?.ncrNo || '-');
-    const typeLabel = r.templateKey === 'rfi' ? 'RFI' : (r.templateKey === 'ncr' ? 'NCR' : r.templateName);
-    const statusDisplay = r.status === 'Closed' ? 'Closed' : r.status;
-    return `
-    <tr>
-      <td><b>${esc(idDisplay)}</b></td>
-      <td>${esc(typeLabel)}</td>
-      <td>${esc(r.meta?.project || r.titleLoc || '-')}</td>
-      <td><span class="kpi-status ${kpiStatusClass(r.status || '')}">${esc(statusDisplay || 'Draft')}</span></td>
-      <td>${esc(r.createdByDisplay || '-')}</td>
-      <td>${fmtDate(r.meta?.date || r.savedAt)}</td>
-      <td><button class="btn btn-secondary" style="padding:6px 10px;font-size:12px;" onclick="openRecord('${r.id}')">Open</button></td>
-    </tr>
-  `}).join('');
-}
-
-// ============================================
-// HISTORY FILTERING (unchanged, but works with NCR)
-// ============================================
 function getSavedRecordFilterState() {
   return {
     project: document.getElementById('fltProject')?.value?.toLowerCase() || '',
@@ -2045,73 +1916,284 @@ function renderHistory() {
     return;
   }
 
+  // Group RFIs with linked checklists
   const rfiRows = rows.filter(r => r.templateKey === 'rfi');
   const otherRows = rows.filter(r => r.templateKey !== 'rfi');
-  // For simplicity, show all rows without parent-child nesting for non-RFI types (like NCR)
-  // But keep RFI parent-child display for RFIs
-  // We'll just list all rows with appropriate info
-  otherRows.forEach(r => {
+  const checklistMap = new Map();
+  otherRows.forEach(chk => {
+    const key = chk.templateKey === 'ncr' || chk.templateKey === 'imir' ? '__standalone__' : (chk.meta?.linkedRfi || '__unlinked__');
+    if (!checklistMap.has(key)) checklistMap.set(key, []);
+    checklistMap.get(key).push(chk);
+  });
+
+  // Show standalone NCR/IMIR rows first
+  const standalone = checklistMap.get('__standalone__') || [];
+  standalone.forEach(r => {
     const scoreBadge = typeof r.score === 'number' ? `<span class="badge ${r.score < 60 ? 'bad' : r.score < 85 ? 'mid' : 'ok'}">${r.score}%</span>` : '<span class="badge mid">N/A</span>';
-    const statusDisplay = r.status === 'Closed' ? 'Closed' : r.status;
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${fmtDate(r.meta?.date || r.savedAt)}</td>
       <td><b>${esc(r.templateName)}</b><br><span class="small">${esc(r.formatNo)}</span></td>
       <td>${esc(r.titleLoc || '-')}</td>
       <td>${esc(r.preparedBy || '-')}<br><span class="small">Owner: ${esc(r.createdByDisplay || '-')}</span></td>
-      <td>${badgeForStatus(statusDisplay)}</td>
+      <td>${badgeForStatus(r.status || 'Draft')}</td>
       <td>${r.defectsCount || 0}</td>
       <td>${scoreBadge}</td>
       <td><button class="btn btn-secondary" style="padding:6px 10px;font-size:12px;" onclick="openRecord('${r.id}')">Open</button> ${canDeleteRecord(r) ? `<button class="btn btn-danger" style="padding:6px 10px;font-size:12px;" onclick="deleteReport('${r.id}')">Delete</button>` : ''}</td>`;
     body.appendChild(tr);
   });
 
-  // Existing RFI grouping (RFIs with linked checklists)
-  // ... (code for RFI grouping omitted for brevity, but you can keep it as is)
-  // For simplicity, we'll just show all RFIs as regular rows too to avoid duplication
-  // Actually we'll show RFIs as parent rows and linked checklists as children as before.
-  // That code is long but unchanged; we'll not repeat it here to save space.
-  // In the actual file, you'll include the full renderHistory function.
-  // I'll include it in the final deliverable.
+  // Show RFI parent-child rows
+  rfiRows.forEach(r => {
+    const linkedKey = r.meta?.rfiNo || r.id;
+    const linkedList = checklistMap.get(linkedKey) || [];
+    const scoreBadge = typeof r.score === 'number' ? `<span class="badge ${r.score < 60 ? 'bad' : r.score < 85 ? 'mid' : 'ok'}">${r.score}%</span>` : '<span class="badge mid">N/A</span>';
+    const tr = document.createElement('tr');
+    tr.className = 'parent-rfi-row';
+    tr.innerHTML = `
+      <td>${fmtDate(r.meta?.date || r.savedAt)}</td>
+      <td><b>${esc(r.templateName)}</b><br><span class="small">${esc(r.formatNo)}</span></td>
+      <td>${esc(r.titleLoc || '-')}</td>
+      <td>${esc(r.preparedBy || '-')}<br><span class="small">Owner: ${esc(r.createdByDisplay || '-')}</span><br><span class="small">Linked: ${linkedList.length}</span></td>
+      <td>${badgeForStatus(r.status || 'Draft')}</td>
+      <td>${r.defectsCount || 0}</td>
+      <td>${scoreBadge}</td>
+      <td><button class="btn btn-secondary" style="padding:6px 10px;font-size:12px;" onclick="openRecord('${r.id}')">Open</button> ${canDeleteRecord(r) ? `<button class="btn btn-danger" style="padding:6px 10px;font-size:12px;" onclick="deleteReport('${r.id}')">Delete</button>` : ''}</td>`;
+    body.appendChild(tr);
+    linkedList.forEach(chk => {
+      const chkScoreBadge = typeof chk.score === 'number' ? `<span class="badge ${chk.score < 60 ? 'bad' : chk.score < 85 ? 'mid' : 'ok'}">${chk.score}%</span>` : '<span class="badge mid">N/A</span>';
+      const child = document.createElement('tr');
+      child.className = 'child-row';
+      child.innerHTML = `
+        <td>${fmtDate(chk.meta?.date || chk.savedAt)}</td>
+        <td style="padding-left:28px;"><span class="small">↳ Linked Checklist</span><br><b>${esc(chk.templateName)}</b><br><span class="small">${esc(chk.formatNo)}</span></td>
+        <td>${esc(chk.titleLoc || '-')}<br><span class="small">Linked to: ${esc(chk.meta?.linkedRfi || '-')}</span></td>
+        <td>${esc(chk.preparedBy || '-')}<br><span class="small">Owner: ${esc(chk.createdByDisplay || '-')}</span></td>
+        <td>${badgeForStatus(chk.status || 'Closed')}</td>
+        <td>${chk.defectsCount || 0}</td>
+        <td>${chkScoreBadge}</td>
+        <td><button class="btn btn-secondary" style="padding:6px 10px;font-size:12px;" onclick="openRecord('${chk.id}')">Open</button> ${canDeleteRecord(chk) ? `<button class="btn btn-danger" style="padding:6px 10px;font-size:12px;" onclick="deleteReport('${chk.id}')">Delete</button>` : ''}</td>`;
+      body.appendChild(child);
+    });
+  });
 }
 
 // ============================================
-// PRINT FUNCTIONS (unchanged)
+// KPI FILTERING
+// ============================================
+function kpiLabel(type) {
+  const map = {
+    total: 'All RFI',
+    approval: 'Approved RFI',
+    pending: 'Pending RFI',
+    approved: 'Approved RFI',
+    approved_comment: 'RFI w/ Comment',
+    rejected: 'Rejected RFI',
+    ncr_total: 'All NCR',
+    ncr_open: 'Open NCR',
+    ncr_closed: 'Closed NCR',
+    ncr_closed_pct: 'NCR Closed %'
+  };
+  return map[type] || 'Filtered';
+}
+
+function kpiStatusClass(status) {
+  if (status === 'Approved' || status === 'Closed') return 'approved';
+  if (status === 'Approved with Comment') return 'comment';
+  if (status === 'Rejected') return 'rejected';
+  return 'pending';
+}
+
+function setActiveKpiCard(type) {
+  document.querySelectorAll('.dashboard-grid .stat[data-kpi]').forEach(card => {
+    card.classList.toggle('active-kpi', card.getAttribute('data-kpi') === type);
+  });
+}
+
+function filterKPI(type) {
+  const sourceRows = visibleReports();
+  let filtered = [];
+  let title = 'All Records';
+  let sub = 'Showing all records.';
+
+  if (type === 'total' || type === 'approval' || type === 'pending' || type === 'approved' || type === 'approved_comment' || type === 'rejected') {
+    const rfis = sourceRows.filter(r => r.templateKey === 'rfi');
+    if (type === 'total') filtered = rfis;
+    else if (type === 'approval') filtered = rfis.filter(r => ['Approved', 'Approved with Comment'].includes(r.status));
+    else if (type === 'pending') filtered = rfis.filter(r => ['Draft', 'Submitted', 'Under Review'].includes(r.status));
+    else if (type === 'approved') filtered = rfis.filter(r => r.status === 'Approved' || r.status === 'Closed');
+    else if (type === 'approved_comment') filtered = rfis.filter(r => r.status === 'Approved with Comment');
+    else if (type === 'rejected') filtered = rfis.filter(r => r.status === 'Rejected');
+    title = 'RFI List'; sub = 'Showing RFI records.';
+  } else if (type === 'ncr_total' || type === 'ncr_open' || type === 'ncr_closed' || type === 'ncr_closed_pct') {
+    const ncrs = sourceRows.filter(r => r.templateKey === 'ncr');
+    if (type === 'ncr_total') filtered = ncrs;
+    else if (type === 'ncr_open') filtered = ncrs.filter(r => r.status !== 'Closed');
+    else if (type === 'ncr_closed' || type === 'ncr_closed_pct') filtered = ncrs.filter(r => r.status === 'Closed');
+    title = 'NCR List'; sub = 'Showing NCR records.';
+  }
+
+  currentKpiFilter = type;
+  currentKpiRows = filtered.slice();
+  renderKPIResults(filtered, type, title, sub);
+  setActiveKpiCard(type);
+}
+
+function renderKPIResults(data, type, customTitle, customSub) {
+  const body = document.getElementById('kpiResultBody');
+  const chip = document.getElementById('kpiActiveFilterChip');
+  const count = document.getElementById('kpiRecordCount');
+  const title = document.getElementById('kpiPanelTitle');
+  const sub = document.getElementById('kpiPanelSub');
+
+  if (chip) chip.textContent = 'Active Filter: ' + kpiLabel(type);
+  if (count) count.textContent = data.length + (data.length === 1 ? ' record' : ' records');
+  if (title) title.textContent = customTitle || 'All Records';
+  if (sub) sub.textContent = customSub || 'Showing records.';
+
+  if (!body) return;
+  if (!data.length) {
+    body.innerHTML = '<tr><td colspan="7" class="kpi-empty">No records found for this filter.</td></tr>';
+    return;
+  }
+
+  body.innerHTML = data.map(r => {
+    const idDisplay = r.meta?.rfiNo || r.meta?.ncrNo || r.id || '-';
+    const typeLabel = r.templateKey === 'rfi' ? 'RFI' : (r.templateKey === 'ncr' ? 'NCR' : (r.templateKey === 'imir' ? 'IMIR' : r.templateName));
+    return `
+    <tr>
+      <td><b>${esc(idDisplay)}</b></td>
+      <td>${esc(typeLabel)}</td>
+      <td>${esc(r.meta?.project || r.titleLoc || '-')}</td>
+      <td><span class="kpi-status ${kpiStatusClass(r.status || '')}">${esc(r.status || 'Draft')}</span></td>
+      <td>${esc(r.createdByDisplay || '-')}</td>
+      <td>${fmtDate(r.meta?.date || r.savedAt)}</td>
+      <td><button class="btn btn-secondary" style="padding:6px 10px;font-size:12px;" onclick="openRecord('${r.id}')">Open</button></td>
+    </tr>
+  `}).join('');
+}
+
+// ============================================
+// PRINT FUNCTIONS
 // ============================================
 function buildPrintableRecordHtml(record) {
-  // ... (same as before, but we need to handle NCR sections)
-  // For brevity, I'll keep the existing logic.
-  return '<div>Print</div>';
+  if (!record) return '';
+  const t = templates[record.templateKey];
+  if (!t) return '';
+  let html = `<div class="print-block"><div class="sheet-shell print-sheet"><div class="sheet-head">`;
+  html += `<div class="org">${esc(appConfig.companyName || 'QA/QC Suite')}</div>`;
+  html += `<div class="dept">QA / QC RECORDS FOR SITE</div>`;
+  html += `<div class="format">Format No. - ${esc(record.formatNo || buildFormatNo(t.formatNo))}</div>`;
+  html += `<div class="title">${esc(t.title)}</div></div>`;
+  html += renderMetaRows(t.metaRows, record.meta || {});
+  (t.sections || []).forEach((sec, si) => {
+    const secData = (record.sections || [])[si] || {};
+    if (sec.type === 'simple_check') html += renderSimpleCheck(sec, secData);
+    else if (sec.type === 'checklist') html += renderChecklist(sec, secData);
+    else if (sec.type === 'table') html += renderTable(sec, secData);
+    else if (sec.type === 'accepted') html += renderAccepted(sec, secData);
+    else if (sec.type === 'status') html += renderStatus(sec, secData, si + '_' + record.id);
+    else if (sec.type === 'textarea') html += renderTextarea(sec, secData);
+    else if (sec.type === 'signatures') html += renderSignatures(sec, secData);
+    else if (sec.type === 'date') html += renderDate(sec, secData, sec.k);
+    else if (sec.type === 'text') html += renderText(sec, secData);
+  });
+  return html + '</div></div>';
 }
-function printCurrentRecordWithChecklists() { window.print(); }
-function printFilteredHistory() { window.print(); }
+
+function printCurrentRecordWithChecklists() {
+  const rec = currentRecord();
+  if (!rec) { window.print(); return; }
+  const pw = window.open('', '_blank');
+  if (!pw) { toast('⚠️ Allow pop-up to print'); return; }
+  pw.document.write(`<html><head><title>${esc(rec.templateName || 'Record')}</title>
+    <style>body{font-family:Arial;padding:18px;} .sheet-head{text-align:center;border:1.8px solid #dbe4ee;border-bottom:none;padding:10px 8px;} .org{font-size:19px;font-weight:700;text-transform:uppercase;} .dept{font-size:16px;font-weight:700;} .format{font-size:13px;font-weight:700;} .title{font-size:20px;font-weight:700;text-transform:uppercase;} table{width:100%;border-collapse:collapse;} td,th{border:1px solid #dbe4ee;padding:6px 8px;font-size:13px;} th{background:#f3f3f3;} .label-cell{font-weight:700;background:#fafafa;width:18%;} input,select,textarea{border:none;background:transparent;width:100%;font-size:13px;outline:none;} textarea{min-height:40px;} .check-section-row td{background:#efefef!important;font-weight:700;text-transform:uppercase;} @page{margin:12mm;}
+    </style></head><body>${buildPrintableRecordHtml(rec)}</body></html>`);
+  pw.document.close(); pw.focus(); setTimeout(() => pw.print(), 250);
+}
+
+function printFilteredHistory() {
+  const rows = getHistoryFilteredRows();
+  if (!rows.length) { toast('No records to print'); return; }
+  const pw = window.open('', '_blank');
+  if (!pw) { toast('Allow pop-up to print'); return; }
+  let tableHtml = `<table><thead><tr><th>Date</th><th>Format</th><th>Project</th><th>Prepared By</th><th>Status</th><th>Defects</th><th>Compliance</th></tr></thead><tbody>`;
+  rows.forEach(r => {
+    const scoreBadge = typeof r.score === 'number' ? `${r.score}%` : 'N/A';
+    tableHtml += `<tr><td>${fmtDate(r.meta?.date || r.savedAt)}</td><td>${esc(r.templateName)}</td><td>${esc(r.titleLoc || '-')}</td><td>${esc(r.preparedBy || '-')}</td><td>${r.status || 'Draft'}</td><td>${r.defectsCount || 0}</td><td>${scoreBadge}</td></tr>`;
+  });
+  tableHtml += '</tbody></table>';
+  pw.document.write(`<html><head><title>Saved Records</title><style>body{font-family:Arial;padding:20px;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ccc;padding:8px;font-size:12px;}th{background:#f0f0f0;}@page{margin:12mm;}</style></head><body><h1>QA/QC Saved Records</h1><p>Generated: ${new Date().toLocaleString()}</p>${tableHtml}</body></html>`);
+  pw.document.close(); pw.focus(); setTimeout(() => pw.print(), 250);
+}
 
 // ============================================
 // DATA EXPORT / IMPORT
 // ============================================
-function exportData() { /* ... */ }
-function importData(event) { /* ... */ }
-function exportAllDataJSON() { /* ... */ }
-function secureDeleteAllData() { /* ... */ }
-function syncWithCloud() { /* ... */ }
+function exportData() {
+  const data = JSON.stringify(savedReports, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `QA_QC_Data_${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  toast('📤 Data exported');
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!Array.isArray(data)) throw new Error('Invalid format');
+      savedReports = data; persistDb();
+      toast('📥 Data imported successfully');
+    } catch (err) { toast('❌ Invalid file format'); }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function exportAllDataJSON() {
+  if (!(currentUser && currentUser.role === 'admin')) { toast('⛔ Admin only'); return; }
+  const payload = { exportedAt: new Date().toISOString(), appConfig, masters, savedReports, notifications };
+  const data = JSON.stringify(payload, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `QA_QC_Full_Backup_${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  toast('📤 Full backup exported');
+}
+
+function secureDeleteAllData() {
+  if (!(currentUser && currentUser.role === 'admin')) { toast('⛔ Admin only'); return; }
+  const phrase = prompt('Type DELETE ALL to confirm');
+  if (phrase !== 'DELETE ALL') { toast('Cancelled'); return; }
+  const pwd = prompt('Enter Admin password');
+  if (pwd !== 'Admin123') { toast('Wrong password'); return; }
+  if (!confirm('Final confirmation?')) return;
+  savedReports = []; notifications = [];
+  localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(NOTIFICATION_KEY);
+  toast('🗑️ All data deleted');
+  renderHistory(); updateStats(); updateNotificationUI();
+}
+
+function syncWithCloud() {
+  toast('☁️ Sync: Export/Import using the buttons above');
+  document.getElementById('syncStatus').innerText = '💾 ' + (savedReports.length) + ' records';
+}
 
 // ============================================
 // INITIALIZATION
 // ============================================
 function init() {
   document.getElementById('todayDate').innerText = todayText();
-  loadConfig();
-  loadMasters();
-  loadDb();
-  loadFromServer();
-  loadSession();
-  applyConfig();
-  populateConfigForm();
-  populateMastersForm();
-  renderCards();
-  renderHistory();
-  updateStats();
-  updateNotificationUI();
+  loadConfig(); loadMasters(); loadDb(); loadFromServer(); loadSession();
+  applyConfig(); populateConfigForm(); populateMastersForm();
+  renderCards(); renderHistory(); updateStats(); updateNotificationUI();
 
   if (currentUser) {
     document.querySelectorAll('.auth-only').forEach(el => el.classList.remove('hidden'));
