@@ -638,7 +638,7 @@ const users = [
 ];
 
 // ============================================
-// TEMPLATES (NCR: removed visible "Raised from RFI")
+// TEMPLATES (NCR includes "Raised from RFI" field)
 // ============================================
 const templates = {
   rfi: {
@@ -737,7 +737,7 @@ const templates = {
       { type: 'signatures', title: 'Signatures', roles: ['Contractor Representative', 'Client Representative'] }
     ]
   },
-  // ===== NCR (exact replica – NO "Raised from RFI" visible) =====
+  // ===== NCR (exact replica – includes "Raised from RFI" field) =====
   ncr: {
     formatNo: 'ADANI/Q/F-09 Rev 0',
     menuTitle: 'NCR',
@@ -751,7 +751,8 @@ const templates = {
       [{ l: 'WBS Code:', k: 'wbsCode' }, { l: 'Location:', k: 'location' }],
       [{ l: 'PO/SO Name:', k: 'poSoName' }, { l: 'Discipline:', k: 'discipline' }],
       [{ l: 'PO/SO No.:', k: 'poSoNo' }, { l: 'NCR Date:', k: 'ncrDate', t: 'date' }],
-      [{ l: 'PO/SO Date:', k: 'poSoDate', t: 'date' }, { l: 'Material/Service:', k: 'materialService' }]
+      [{ l: 'PO/SO Date:', k: 'poSoDate', t: 'date' }, { l: 'Material/Service:', k: 'materialService' }],
+      [{ l: 'Raised from RFI:', k: 'raisedFromRfi' }]
     ],
     sections: [
       { type: 'table', title: 'Description of Material', columns: ['Description of Material', 'ID/ Tag', 'Quantity', 'UoM'], rows: 4 },
@@ -996,11 +997,8 @@ function checkForNewNotifications() {
   try {
     const stored = JSON.parse(localStorage.getItem(NOTIFICATION_KEY) || '[]');
     const userNotifs = stored.filter(n => n.recipientUsername === currentUser.username && !n.read);
-    // If there are unread notifications, update UI and show toast for the latest one
     if (userNotifs.length > 0) {
-      // Check if there are any notifications that were not previously shown
       const latest = userNotifs[0];
-      // Use a simple check: if the notification is less than 30 seconds old, show toast
       const notifAge = Date.now() - new Date(latest.createdAt).getTime();
       if (notifAge < 30000) {
         const iconMap = { 'new_rfi': '🔔', 'approved': '✅', 'rejected': '❌', 'under_review': '🔍', 'approved_comment': '📝', 'new_ncr': '📋', 'closed_ncr': '🔒' };
@@ -1594,8 +1592,6 @@ function saveReport(ev) {
   const preparedBy = meta.preparedBy || meta.raisedBy || meta.contractor || meta.agency || meta.to || '';
   const attachmentInput = document.getElementById('wfAttachment');
   const attachmentNames = attachmentInput ? Array.from(attachmentInput.files || []).map(f => f.name) : (existing?.attachments || []);
-  // Store raisedFromRfi internally for NCR (not visible in form)
-  const raisedFromRfi = meta.raisedFromRfi || '';
   const row = {
     id, templateKey: activeTemplateKey, templateName: t.title,
     formatNo: t.formatNo || buildFormatNo('01'), meta, sections,
@@ -1608,8 +1604,7 @@ function saveReport(ev) {
     decisionBy: existing?.decisionBy || '',
     decisionByDisplay: existing?.decisionByDisplay || '',
     savedAt: new Date().toISOString(),
-    audit: (existing?.audit || []).concat([getAuditNow(existing ? 'Updated' : 'Created', document.getElementById('wfComment')?.value.trim() || '')]),
-    raisedFromRfi: raisedFromRfi // internal use only
+    audit: (existing?.audit || []).concat([getAuditNow(existing ? 'Updated' : 'Created', document.getElementById('wfComment')?.value.trim() || '')])
   };
   let yes = 0, no = 0;
   sections.forEach(sec => {
@@ -1684,7 +1679,7 @@ function setChecklistButtonsState(rec) {
 }
 
 // ============================================
-// RAISE NCR FROM RFI (keeps raisedFromRfi internal)
+// RAISE NCR FROM RFI (includes raisedFromRfi)
 // ============================================
 function raiseNCRFromRFI() {
   const rfi = currentRecord();
@@ -1709,7 +1704,7 @@ function raiseNCRFromRFI() {
     ncrDate: new Date().toISOString().split('T')[0],
     poSoDate: '',
     materialService: '',
-    raisedFromRfi: rfiMeta.rfiNo || rfi.id || '' // internal use only
+    raisedFromRfi: rfiMeta.rfiNo || rfi.id || ''
   };
   const ncrId = 'rep_' + Date.now();
   const newNCR = {
@@ -1731,8 +1726,7 @@ function raiseNCRFromRFI() {
     decisionBy: '',
     decisionByDisplay: '',
     savedAt: new Date().toISOString(),
-    audit: [getAuditNow('Created from RFI #' + (rfiMeta.rfiNo || rfi.id || ''), '')],
-    raisedFromRfi: rfiMeta.rfiNo || rfi.id || ''
+    audit: [getAuditNow('Created from RFI #' + (rfiMeta.rfiNo || rfi.id || ''), '')]
   };
   savedReports.unshift(newNCR);
   persistDb();
