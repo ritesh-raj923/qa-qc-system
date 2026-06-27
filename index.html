@@ -1,3 +1,25 @@
+
+
+Skip to content
+Using Indian Institute of Technology (Indian School of Mines), Dhanbad Mail with screen readers
+
+8 of 8,478
+use kro
+External
+Inbox
+
+Ritesh Kumar 
+Attachments
+Jun 26, 2026, 5:16 PM (16 hours ago)
+to me
+
+
+
+DISCLAIMER: The information contained in this electronic message and any other attachment to this message are intended solely for the addressee and may contain information that is confidential, privileged and exempt from disclosure under applicable law. If you are not the intended recipient, you are hereby formally notified that any use, copying or distribution of this e-mail, in whole or in part, is strictly prohibited. Please immediately notify the sender by return e-mail and delete all copies of this e-mail and any attachments from your system. Any views or opinions presented in this email are solely those of the author and do not necessarily represent those of the company.
+
+WARNING: Computer viruses can be transmitted via email. The recipient should check this email and any attachments for the presence of viruses. Adani Group accepts no liability for any damage caused by any virus transmitted by this email.
+ One attachment
+  •  Scanned by Gmail
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -350,6 +372,79 @@ header .sub { font-size: 13px; color: #555; }
   .sheet-shell, .sheet-head, .sheet-table { box-shadow: none !important; border-radius: 0 !important; }
   .sheet-shell { border: none !important; padding: 0 !important; }
 }
+
+/* ===== EXACT EXCEL REPLICA FORMATS: NCR + IMIR ===== */
+.exact-format .sheet-table,
+.exact-format table.exact-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  background: #fff;
+  margin-bottom: 0;
+  border: 1.6px solid #000;
+}
+.exact-format .sheet-table td,
+.exact-format .sheet-table th,
+.exact-format table.exact-table td,
+.exact-format table.exact-table th {
+  border: 1px solid #000;
+  padding: 4px 6px;
+  font-size: 12px;
+  color: #000;
+  vertical-align: middle;
+  line-height: 1.25;
+}
+.exact-format th,
+.exact-title-cell {
+  background: #fff !important;
+  font-weight: 700;
+  text-align: center;
+}
+.exact-main-title {
+  font-size: 18px !important;
+  font-weight: 700;
+  text-align: center;
+  text-transform: none;
+}
+.exact-sub-title {
+  font-size: 12px !important;
+  font-weight: 700;
+  text-align: center;
+}
+.exact-label {
+  font-weight: 700;
+  background: #fff;
+  width: 18%;
+}
+.exact-input,
+.exact-textarea,
+.exact-select {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 12px;
+  padding: 2px;
+  font-family: Arial, Helvetica, sans-serif;
+}
+.exact-textarea {
+  min-height: 48px;
+  resize: vertical;
+}
+.exact-tall { min-height: 72px; }
+.exact-center { text-align: center; }
+.exact-small { font-size: 11px !important; }
+.exact-note { padding: 7px 6px !important; }
+.exact-sign-row td { height: 34px; }
+.exact-internal { font-weight: 700; text-align: center; background: #f2f2f2 !important; }
+@media print {
+  .exact-format .sheet-table td,
+  .exact-format .sheet-table th,
+  .exact-format table.exact-table td,
+  .exact-format table.exact-table th { border: 1px solid #000 !important; }
+  .exact-input, .exact-textarea, .exact-select { border: none !important; }
+}
+
 </style>
 </head>
 <body>
@@ -638,7 +733,7 @@ const users = [
 ];
 
 // ============================================
-// TEMPLATES (NCR includes "Raised from RFI" field)
+// TEMPLATES (NCR: removed visible "Raised from RFI")
 // ============================================
 const templates = {
   rfi: {
@@ -737,7 +832,7 @@ const templates = {
       { type: 'signatures', title: 'Signatures', roles: ['Contractor Representative', 'Client Representative'] }
     ]
   },
-  // ===== NCR (exact replica – includes "Raised from RFI" field) =====
+  // ===== NCR (exact replica – NO "Raised from RFI" visible) =====
   ncr: {
     formatNo: 'ADANI/Q/F-09 Rev 0',
     menuTitle: 'NCR',
@@ -751,8 +846,7 @@ const templates = {
       [{ l: 'WBS Code:', k: 'wbsCode' }, { l: 'Location:', k: 'location' }],
       [{ l: 'PO/SO Name:', k: 'poSoName' }, { l: 'Discipline:', k: 'discipline' }],
       [{ l: 'PO/SO No.:', k: 'poSoNo' }, { l: 'NCR Date:', k: 'ncrDate', t: 'date' }],
-      [{ l: 'PO/SO Date:', k: 'poSoDate', t: 'date' }, { l: 'Material/Service:', k: 'materialService' }],
-      [{ l: 'Raised from RFI:', k: 'raisedFromRfi' }]
+      [{ l: 'PO/SO Date:', k: 'poSoDate', t: 'date' }, { l: 'Material/Service:', k: 'materialService' }]
     ],
     sections: [
       { type: 'table', title: 'Description of Material', columns: ['Description of Material', 'ID/ Tag', 'Quantity', 'UoM'], rows: 4 },
@@ -795,6 +889,176 @@ const templates = {
     ]
   }
 };
+
+
+// ============================================
+// EXACT EXCEL REPLICA RENDERING: NCR + IMIR
+// ============================================
+function ev(v) { return esc(v || ''); }
+function secVal(report, idx, fallbackKey) {
+  const sec = (report?.sections || [])[idx] || {};
+  if (sec.value !== undefined) return sec.value;
+  if (fallbackKey && sec[fallbackKey] !== undefined) return sec[fallbackKey];
+  return '';
+}
+function rowVals(report, idx, rowCount, colCount) {
+  const rows = ((report?.sections || [])[idx] || {}).rows || [];
+  const out = [];
+  for (let r = 0; r < rowCount; r++) {
+    const row = rows[r] || [];
+    out.push(Array.from({length: colCount}, (_, c) => row[c] ?? (c === 0 ? String(r + 1) : '')));
+  }
+  return out;
+}
+function signEntries(report, idx, roles) {
+  const entries = ((report?.sections || [])[idx] || {}).entries || [];
+  return roles.map((role, i) => ({ role, ...(entries[i] || {}) }));
+}
+function inputExact(id, value, type='text') {
+  return `<input ${id ? `id="${id}"` : ''} type="${type}" class="exact-input" value="${ev(value)}">`;
+}
+function textExact(key, value, cls='') {
+  return `<textarea data-exact-text="${key}" class="exact-textarea ${cls}">${ev(value)}</textarea>`;
+}
+function renderNCRExact(report) {
+  const m = report?.meta || {};
+  const typeValue = secVal(report, 5);
+  const materialRows = rowVals(report, 0, 4, 4);
+  const sigRoles = ['Originated by', 'Adani Responsible<br>(Engg./Const.)', 'Area/Discipline Lead', 'Received by:'];
+  const sigs = [8,9,10,11].map((idx, i) => signEntries(report, idx, [''])[0] || {});
+  const dispSig = signEntries(report, 15, ['Disposal Approved by:'])[0] || {};
+  return `
+  <div class="exact-format ncr-exact">
+    <table class="exact-table">
+      <tr><th colspan="4" class="exact-main-title">Non Conformance Report (NCR)</th></tr>
+      <tr><th colspan="4" class="exact-sub-title">(Issued by QA/FQA to respective agency)</th></tr>
+      <tr><td class="exact-label">NCR No.:</td><td>${inputExact('meta_ncrNo', m.ncrNo)}</td><td class="exact-label">Category:</td><td>${inputExact('meta_category', m.category)}</td></tr>
+      <tr><td class="exact-label">Project Name:</td><td>${inputExact('meta_project', m.project || appConfig.projectName)}</td><td class="exact-label">Entity Type:</td><td>${inputExact('meta_entityType', m.entityType)}</td></tr>
+      <tr><td class="exact-label">Package:</td><td>${inputExact('meta_package', m.package)}</td><td class="exact-label">Agency:</td><td>${inputExact('meta_agency', m.agency)}</td></tr>
+      <tr><td class="exact-label">WBS Code:</td><td>${inputExact('meta_wbsCode', m.wbsCode)}</td><td class="exact-label">Location:</td><td>${inputExact('meta_location', m.location || appConfig.location)}</td></tr>
+      <tr><td class="exact-label">PO/SO Name:</td><td>${inputExact('meta_poSoName', m.poSoName)}</td><td class="exact-label">Discipline:</td><td>${inputExact('meta_discipline', m.discipline)}</td></tr>
+      <tr><td class="exact-label">PO/SO No.:</td><td>${inputExact('meta_poSoNo', m.poSoNo)}</td><td class="exact-label">NCR Date:</td><td>${inputExact('meta_ncrDate', m.ncrDate, 'date')}</td></tr>
+      <tr><td class="exact-label">PO/SO Date:</td><td>${inputExact('meta_poSoDate', m.poSoDate, 'date')}</td><td class="exact-label">Material/ Service:</td><td>${inputExact('meta_materialService', m.materialService)}</td></tr>
+    </table>
+    <table class="exact-table ncr-material">
+      <tr><th>Description of Material</th><th>ID/ Tag</th><th>Quantity</th><th>UoM</th></tr>
+      <tbody>${materialRows.map(row => `<tr>${row.map(v => `<td>${inputExact('', v)}</td>`).join('')}</tr>`).join('')}</tbody>
+    </table>
+    <table class="exact-table"><tr><th>Description of Non Conformance (NC) (Attach Spec/ Drawings, if required)</th></tr><tr><td>${textExact('ncr_nc_desc', secVal(report,1), 'exact-tall')}</td></tr></table>
+    <table class="exact-table"><tr><th>Root Cause</th></tr><tr><td>${textExact('ncr_root_cause', secVal(report,2))}</td></tr></table>
+    <table class="exact-table"><tr><th>Engineering Recommendation</th></tr><tr><td>${textExact('ncr_eng_rec', secVal(report,3))}</td></tr></table>
+    <table class="exact-table"><tr><th colspan="3">Proposed Corrections</th></tr><tr><td colspan="3">${textExact('ncr_proposed_corrections', secVal(report,4))}</td></tr><tr><td class="exact-label">Type</td><td><select data-exact-select="ncr_type" class="exact-select"><option value=""></option>${['Repair','Rework','Reject','Concession'].map(o=>`<option value="${o}" ${typeValue===o?'selected':''}>${o}</option>`).join('')}</select></td><td><b>Construction Concurance</b> ${inputExact('meta_constructionConcurance', m.constructionConcurance)}</td></tr></table>
+    <table class="exact-table"><tr><th>Proposed Corrective Actions</th><th style="width:22%;">Target Date</th></tr><tr><td>${textExact('ncr_corrective_actions', secVal(report,6))}</td><td>${inputExact('meta_targetDate', secVal(report,7,'targetDate') || m.targetDate, 'date')}</td></tr></table>
+    <table class="exact-table">
+      <tr>${sigRoles.map(r=>`<th>${r}</th>`).join('')}</tr>
+      <tr class="exact-sign-row">${sigs.map(s=>`<td><b>Name:</b> <input class="exact-input" data-sign-name value="${ev(s.name)}"></td>`).join('')}</tr>
+      <tr class="exact-sign-row">${sigs.map(s=>`<td><b>Signature:</b> <input class="exact-input" data-sign-sign value="${ev(s.sign)}"></td>`).join('')}</tr>
+      <tr class="exact-sign-row">${sigs.map(s=>`<td><b>Date:</b> <input type="date" class="exact-input" data-sign-date value="${ev(s.date)}"></td>`).join('')}</tr>
+    </table>
+    <table class="exact-table"><tr><td class="exact-internal">For Adani Internal Use Only</td></tr></table>
+    <table class="exact-table"><tr><td class="exact-label">Agency:</td><td>${inputExact('meta_internalAgency', m.internalAgency || m.agency)}</td></tr></table>
+    <table class="exact-table"><tr><th>NC Disposal Summary</th></tr><tr><td>${textExact('ncr_disposal_summary', secVal(report,12), 'exact-tall')}</td></tr></table>
+    <table class="exact-table"><tr><td class="exact-internal">For Adani Internal Use Only</td></tr></table>
+    <table class="exact-table"><tr><th>Verification of Corrective Action</th></tr><tr><td>${textExact('ncr_verification', secVal(report,13), 'exact-tall')}</td></tr></table>
+    <table class="exact-table"><tr><td class="exact-label">Code</td><td>${inputExact('meta_code', secVal(report,14,'code') || m.code)}</td></tr></table>
+    <table class="exact-table">
+      <tr><th colspan="3">Disposal Approved by:</th></tr>
+      <tr><td><b>Name:</b> <input class="exact-input" data-disposal-name value="${ev(dispSig.name)}"></td><td><b>Signature:</b> <input class="exact-input" data-disposal-sign value="${ev(dispSig.sign)}"></td><td><b>Date:</b> <input type="date" class="exact-input" data-disposal-date value="${ev(dispSig.date)}"></td></tr>
+      <tr><td colspan="3" class="exact-small">Format No. ADANI/Q/F-09 Rev 0</td></tr>
+    </table>
+  </div>`;
+}
+function renderIMIRExact(report) {
+  const m = report?.meta || {};
+  const materialRows = rowVals(report, 0, 5, 6);
+  const sigRoles = ['Merit Execution', 'Merit QA/QC', 'Adani Execution', 'Adani FQA', 'Adani QA/QC'];
+  const sigs = signEntries(report, 4, sigRoles);
+  return `
+  <div class="exact-format imir-exact">
+    <table class="exact-table">
+      <tr><th colspan="4" class="exact-main-title">MATERIAL APPROVAL</th></tr>
+      <tr><td class="exact-label">Client:</td><td>${inputExact('meta_client', m.client || 'M/s Adani Entreprises Ltd')}</td><td class="exact-label">Package/System:</td><td>${inputExact('meta_package', m.package)}</td></tr>
+      <tr><td class="exact-label">Date&nbsp; :</td><td>${inputExact('meta_date', m.date, 'date')}</td><td class="exact-label">Location:</td><td>${inputExact('meta_location', m.location || appConfig.location)}</td></tr>
+      <tr><td class="exact-label">Drawing No.:</td><td colspan="3">${inputExact('meta_drawingNo', m.drawingNo)}</td></tr>
+    </table>
+    <table class="exact-table">
+      <tr><th colspan="3" style="text-align:left;">Material Appproval Submittal :-</th><th>STATUS<br>CODE</th></tr>
+      <tr><td class="exact-label">To</td><td>${inputExact('meta_to', m.to || 'FQA Head Adani')}</td><td>Approved</td><td class="exact-center"><b>A</b></td></tr>
+      <tr><td class="exact-label">Subject</td><td>${inputExact('meta_subject', m.subject)}</td><td>Approved As Noted</td><td class="exact-center"><b>B</b></td></tr>
+      <tr><td colspan="2" class="exact-note">We are forwarding herewith, the submissions Listed below for your action.</td><td>Not Approved</td><td class="exact-center"><b>C</b></td></tr>
+    </table>
+    <table class="exact-table imir-material">
+      <tr><th>Sl. No</th><th>Material Description</th><th>Manufacturer</th><th>Supplier</th><th>Structure of Indent use</th><th>Status<br>A&nbsp;&nbsp;B&nbsp;&nbsp;C</th></tr>
+      <tbody>${materialRows.map((row, r) => `<tr>${row.map((v,c) => `<td>${inputExact('', v || (c===0 ? String(r+1) : ''))}</td>`).join('')}</tr>`).join('')}</tbody>
+    </table>
+    <table class="exact-table"><tr><td class="exact-label">Relevant Drawing:-</td><td>${textExact('imir_relevant_drawing', secVal(report,1))}</td></tr></table>
+    <table class="exact-table"><tr><td class="exact-label">Relevant Specification&nbsp; No:-</td><td>${textExact('imir_relevant_spec', secVal(report,2))}</td></tr></table>
+    <table class="exact-table"><tr><td class="exact-label">Remarks</td><td>${textExact('imir_remarks', secVal(report,3))}</td></tr></table>
+    <table class="exact-table imir-signatures">
+      <tr><th>Signatory</th>${sigRoles.map(r=>`<th>${r}</th>`).join('')}</tr>
+      <tr><td><b>Name</b></td>${sigs.map(s=>`<td><input class="exact-input" data-sign-name value="${ev(s.name)}"></td>`).join('')}</tr>
+      <tr><td><b>Signature</b></td>${sigs.map(s=>`<td><input class="exact-input" data-sign-sign value="${ev(s.sign)}"></td>`).join('')}</tr>
+      <tr><td><b>Date</b></td>${sigs.map(s=>`<td><input type="date" class="exact-input" data-sign-date value="${ev(s.date)}"></td>`).join('')}</tr>
+    </table>
+  </div>`;
+}
+function collectNCRSectionsExact() {
+  const root = document.querySelector('.ncr-exact');
+  if (!root) return [];
+  const materialRows = Array.from(root.querySelectorAll('.ncr-material tbody tr')).map(tr => Array.from(tr.querySelectorAll('input')).map(i => i.value));
+  const signTable = root.querySelectorAll('.exact-table')[10];
+  const signCellsByRow = signTable ? Array.from(signTable.querySelectorAll('tr')).slice(1,4) : [];
+  function signAt(i) {
+    return {
+      name: signCellsByRow[0]?.cells[i]?.querySelector('[data-sign-name]')?.value || '',
+      sign: signCellsByRow[1]?.cells[i]?.querySelector('[data-sign-sign]')?.value || '',
+      date: signCellsByRow[2]?.cells[i]?.querySelector('[data-sign-date]')?.value || ''
+    };
+  }
+  return [
+    { type:'table', rows: materialRows },
+    { type:'textarea', value: root.querySelector('[data-exact-text="ncr_nc_desc"]')?.value || '' },
+    { type:'textarea', value: root.querySelector('[data-exact-text="ncr_root_cause"]')?.value || '' },
+    { type:'textarea', value: root.querySelector('[data-exact-text="ncr_eng_rec"]')?.value || '' },
+    { type:'textarea', value: root.querySelector('[data-exact-text="ncr_proposed_corrections"]')?.value || '' },
+    { type:'status', value: root.querySelector('[data-exact-select="ncr_type"]')?.value || '' },
+    { type:'textarea', value: root.querySelector('[data-exact-text="ncr_corrective_actions"]')?.value || '' },
+    { type:'date', targetDate: document.getElementById('meta_targetDate')?.value || '' },
+    { type:'signatures', entries: [signAt(0)] },
+    { type:'signatures', entries: [signAt(1)] },
+    { type:'signatures', entries: [signAt(2)] },
+    { type:'signatures', entries: [signAt(3)] },
+    { type:'textarea', value: root.querySelector('[data-exact-text="ncr_disposal_summary"]')?.value || '' },
+    { type:'textarea', value: root.querySelector('[data-exact-text="ncr_verification"]')?.value || '' },
+    { type:'text', code: document.getElementById('meta_code')?.value || '' },
+    { type:'signatures', entries: [{
+      name: root.querySelector('[data-disposal-name]')?.value || '',
+      sign: root.querySelector('[data-disposal-sign]')?.value || '',
+      date: root.querySelector('[data-disposal-date]')?.value || ''
+    }] }
+  ];
+}
+function collectIMIRSectionsExact() {
+  const root = document.querySelector('.imir-exact');
+  if (!root) return [];
+  const materialRows = Array.from(root.querySelectorAll('.imir-material tbody tr')).map(tr => Array.from(tr.querySelectorAll('input')).map(i => i.value));
+  const sigTable = root.querySelector('.imir-signatures');
+  const sigRows = sigTable ? Array.from(sigTable.querySelectorAll('tr')).slice(1,4) : [];
+  const roles = ['Merit Execution', 'Merit QA/QC', 'Adani Execution', 'Adani FQA', 'Adani QA/QC'];
+  const entries = roles.map((role, i) => ({
+    role,
+    name: sigRows[0]?.cells[i+1]?.querySelector('[data-sign-name]')?.value || '',
+    sign: sigRows[1]?.cells[i+1]?.querySelector('[data-sign-sign]')?.value || '',
+    date: sigRows[2]?.cells[i+1]?.querySelector('[data-sign-date]')?.value || ''
+  }));
+  return [
+    { type:'table', rows: materialRows },
+    { type:'textarea', value: root.querySelector('[data-exact-text="imir_relevant_drawing"]')?.value || '' },
+    { type:'textarea', value: root.querySelector('[data-exact-text="imir_relevant_spec"]')?.value || '' },
+    { type:'textarea', value: root.querySelector('[data-exact-text="imir_remarks"]')?.value || '' },
+    { type:'signatures', entries }
+  ];
+}
 
 // ============================================
 // UTILITY FUNCTIONS
@@ -997,8 +1261,11 @@ function checkForNewNotifications() {
   try {
     const stored = JSON.parse(localStorage.getItem(NOTIFICATION_KEY) || '[]');
     const userNotifs = stored.filter(n => n.recipientUsername === currentUser.username && !n.read);
+    // If there are unread notifications, update UI and show toast for the latest one
     if (userNotifs.length > 0) {
+      // Check if there are any notifications that were not previously shown
       const latest = userNotifs[0];
+      // Use a simple check: if the notification is less than 30 seconds old, show toast
       const notifAge = Date.now() - new Date(latest.createdAt).getTime();
       if (notifAge < 30000) {
         const iconMap = { 'new_rfi': '🔔', 'approved': '✅', 'rejected': '❌', 'under_review': '🔍', 'approved_comment': '📝', 'new_ncr': '📋', 'closed_ncr': '🔒' };
@@ -1427,6 +1694,16 @@ function renderSheet(t, report) {
   const body = document.getElementById('sheetBody');
   const meta = report?.meta || {};
   const sectionsData = report?.sections || [];
+  if (activeTemplateKey === 'ncr') {
+    body.innerHTML = renderNCRExact(report);
+    updateProgress();
+    return;
+  }
+  if (activeTemplateKey === 'imir') {
+    body.innerHTML = renderIMIRExact(report);
+    updateProgress();
+    return;
+  }
   let html = renderMetaRows(t.metaRows, meta);
   let si = 0;
   t.sections.forEach((sec) => {
@@ -1456,10 +1733,17 @@ function collectMeta(t) {
     const el = document.getElementById('meta_' + cell.k);
     if (el) meta[cell.k] = el.value || '';
   });
+  // Exact NCR/IMIR custom layouts include extra input IDs outside the generic metaRows.
+  document.querySelectorAll('#sheetBody [id^="meta_"]').forEach(el => {
+    const key = el.id.replace(/^meta_/, '');
+    meta[key] = el.value || '';
+  });
   return meta;
 }
 
 function collectSections(t) {
+  if (activeTemplateKey === 'ncr') return collectNCRSectionsExact();
+  if (activeTemplateKey === 'imir') return collectIMIRSectionsExact();
   const shell = document.getElementById('sheetBody');
   if (!shell) return [];
   const sectionTables = Array.from(shell.children).slice(1);
@@ -1561,7 +1845,7 @@ function validateForm(meta) {
     if (!meta.agency) req.push('Agency');
     if (!meta.ncrDate) req.push('NCR Date');
   } else if (activeTemplateKey === 'imir') {
-    if (!meta.project) req.push('Project');
+    if (!meta.client) req.push('Client');
     if (!meta.package) req.push('Package/System');
     if (!meta.date) req.push('Date');
   } else {
@@ -1592,6 +1876,8 @@ function saveReport(ev) {
   const preparedBy = meta.preparedBy || meta.raisedBy || meta.contractor || meta.agency || meta.to || '';
   const attachmentInput = document.getElementById('wfAttachment');
   const attachmentNames = attachmentInput ? Array.from(attachmentInput.files || []).map(f => f.name) : (existing?.attachments || []);
+  // Store raisedFromRfi internally for NCR (not visible in form)
+  const raisedFromRfi = meta.raisedFromRfi || '';
   const row = {
     id, templateKey: activeTemplateKey, templateName: t.title,
     formatNo: t.formatNo || buildFormatNo('01'), meta, sections,
@@ -1604,7 +1890,8 @@ function saveReport(ev) {
     decisionBy: existing?.decisionBy || '',
     decisionByDisplay: existing?.decisionByDisplay || '',
     savedAt: new Date().toISOString(),
-    audit: (existing?.audit || []).concat([getAuditNow(existing ? 'Updated' : 'Created', document.getElementById('wfComment')?.value.trim() || '')])
+    audit: (existing?.audit || []).concat([getAuditNow(existing ? 'Updated' : 'Created', document.getElementById('wfComment')?.value.trim() || '')]),
+    raisedFromRfi: raisedFromRfi // internal use only
   };
   let yes = 0, no = 0;
   sections.forEach(sec => {
@@ -1679,7 +1966,7 @@ function setChecklistButtonsState(rec) {
 }
 
 // ============================================
-// RAISE NCR FROM RFI (includes raisedFromRfi)
+// RAISE NCR FROM RFI (keeps raisedFromRfi internal)
 // ============================================
 function raiseNCRFromRFI() {
   const rfi = currentRecord();
@@ -1704,7 +1991,7 @@ function raiseNCRFromRFI() {
     ncrDate: new Date().toISOString().split('T')[0],
     poSoDate: '',
     materialService: '',
-    raisedFromRfi: rfiMeta.rfiNo || rfi.id || ''
+    raisedFromRfi: rfiMeta.rfiNo || rfi.id || '' // internal use only
   };
   const ncrId = 'rep_' + Date.now();
   const newNCR = {
@@ -1726,7 +2013,8 @@ function raiseNCRFromRFI() {
     decisionBy: '',
     decisionByDisplay: '',
     savedAt: new Date().toISOString(),
-    audit: [getAuditNow('Created from RFI #' + (rfiMeta.rfiNo || rfi.id || ''), '')]
+    audit: [getAuditNow('Created from RFI #' + (rfiMeta.rfiNo || rfi.id || ''), '')],
+    raisedFromRfi: rfiMeta.rfiNo || rfi.id || ''
   };
   savedReports.unshift(newNCR);
   persistDb();
@@ -2158,6 +2446,14 @@ function buildPrintableRecordHtml(record) {
   html += `<div class="dept">${esc(t.dept || '')}</div>`;
   html += `<div class="format">Format No. - ${esc(record.formatNo || '')}</div>`;
   html += `<div class="title">${esc(t.title)}</div></div>`;
+  if (record.templateKey === 'ncr') {
+    html += renderNCRExact(record);
+    return html + '</div></div>';
+  }
+  if (record.templateKey === 'imir') {
+    html += renderIMIRExact(record);
+    return html + '</div></div>';
+  }
   html += renderMetaRows(t.metaRows, record.meta || {});
   (t.sections || []).forEach((sec, si) => {
     const secData = (record.sections || [])[si] || {};
@@ -2298,3 +2594,5 @@ document.addEventListener('click', function(e) {
 </script>
 </body>
 </html>
+index.html
+Displaying index.html.
