@@ -2364,51 +2364,16 @@ function openTemplate(key, reportId = null) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+// ============================================
+// OPEN RECORD – FIXED: uses canUserSeeRecord consistently
+// ============================================
 function openRecord(id) {
   const r = savedReports.find(x => x.id === id);
   if (!r) return;
-  // Check visibility using the same logic as visibleReports
-  if (!canSeeAll() && r.createdBy !== currentUser.username) {
-    // For RFIs, apply routing visibility
-    if (r.templateKey === 'rfi') {
-      const routing = r.meta?.routing || 'Execution Engineer → QA Head';
-      const isExec = isExecEngineer();
-      const isQA = canApprove();
-      if (routing === 'Direct to QA Head' && !isQA) {
-        toast('⛔ Access denied');
-        return;
-      }
-      if (routing === 'Execution Engineer → QA Head' && !isExec && !(isQA && r.status === 'Approved by Execution')) {
-        toast('⛔ Access denied');
-        return;
-      }
-      if (routing === 'Both' && !isExec && !isQA) {
-        toast('⛔ Access denied');
-        return;
-      }
-    } else {
-      // For non-RFI records, check if they are linked to a visible RFI
-      const linkedRfiId = r.raisedFromRfi || r.meta?.raisedFromRfi || r.meta?.linkedRfi || '';
-      if (linkedRfiId) {
-        const parentRfi = savedReports.find(pr => pr.templateKey === 'rfi' && (pr.id === linkedRfiId || pr.meta?.rfiNo === linkedRfiId));
-        if (parentRfi) {
-          // If the parent RFI is visible to the user, allow opening this record
-          if (!canUserSeeRecord(parentRfi, currentUser)) {
-            toast('⛔ Access denied');
-            return;
-          }
-        } else {
-          toast('⛔ Access denied');
-          return;
-        }
-      } else {
-        // If not linked, only allow if owner or admin/manager/consultant
-        if (!['admin', 'manager', 'consultant'].includes(currentUser.role)) {
-          toast('⛔ Access denied');
-          return;
-        }
-      }
-    }
+  // Use the same visibility check as visibleReports
+  if (!canUserSeeRecord(r, currentUser)) {
+    toast('⛔ Access denied');
+    return;
   }
   openTemplate(r.templateKey, r.id);
 }
