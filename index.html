@@ -736,7 +736,7 @@ const templates = {
       [{ l: 'Inspection Type :', k: 'inspectionType', t: 'select', options: ['Material Inspection', 'Work Inspection'] }, { l: 'Raised By :', k: 'raisedBy' }],
       [{ l: 'Inspection Date', k: 'date', t: 'date' }, { l: 'Inspection Location/Area', k: 'location' }],
       [{ l: 'Inspection to be done', k: 'inspectionScope' }],
-      // NEW: 3 routing options, visible only to Contractor and Admin
+      // 3 routing options: only Contractor and Admin can see/choose
       [{ l: 'Routing :', k: 'routing', t: 'radio', options: ['Direct to QA Head', 'Execution Engineer → QA Head', 'Both'] }]
     ],
     sections: [
@@ -1397,8 +1397,56 @@ function canSeeAll() { return currentUser && (currentUser.role === 'qa_head' || 
 function canDeleteRecord(rec) { return currentUser && (currentUser.role === 'admin' || currentUser.role === 'qa_head' || rec?.createdBy === currentUser.username); }
 
 // ============================================
-// VISIBILITY FILTER (strict routing-based)
+// STRICT VISIBILITY BASED ON ROUTING (with NCR parent RFI ownership)
 // ============================================
+function canUserSeeRecord(record, user) {
+  if (!user) return false;
+  if (!record) return false;
+
+  // Always allow owner
+  if (record.createdBy === user.username) return true;
+
+  // Admin sees all
+  if (user.role === 'admin') return true;
+
+  // For non-RFI records (checklists, NCRs, IMIRs), we need to check linked RFI
+  if (record.templateKey !== 'rfi') {
+    // First, try to find a linked RFI from various fields
+    let linkedRfiId = record.raisedFromRfi || record.meta?.raisedFromRfi || record.meta?.linkedRfi || '';
+    if (linkedRfiId) {
+      // Search for the parent RFI
+      const parentRfi = savedReports.find(r => r.templateKey === 'rfi' && (r.id === linkedRfiId || r.meta?.rfiNo === linkedRfiId));
+      if (parentRfi) {
+        // If current user is the owner of the parent RFI, they can see this record
+        if (parentRfi.createdBy === user.username) return true;
+        // Otherwise, check if they have permission to see the parent RFI based on routing
+        return canUserSeeRecord(parentRfi, user);
+      }
+    }
+    // If no linked RFI, allow if user is manager, consultant, QA Head, or Execution Engineer (for standalone records)
+    return user.role === 'manager' || user.role === 'consultant' || user.role === 'qa_head' || user.role === 'exec_engineer';
+  }
+
+  // Now handle RFI records
+  const routing = record.meta?.routing || 'Execution Engineer → QA Head';
+  const status = record.status || 'Draft';
+
+  if (routing === 'Direct to QA Head') {
+    // Only QA Head (and Admin + owner already handled)
+    return user.role === 'qa_head';
+  } else if (routing === 'Execution Engineer → QA Head') {
+    // Execution Engineer can see always
+    if (user.role === 'exec_engineer') return true;
+    // QA Head can see only after Execution Engineer has approved (status = Approved by Execution)
+    if (user.role === 'qa_head' && status === 'Approved by Execution') return true;
+    return false;
+  } else if (routing === 'Both') {
+    // Both QA Head and Execution Engineer can see
+    return user.role === 'qa_head' || user.role === 'exec_engineer';
+  }
+  return false;
+}
+
 function visibleReports() {
   let rows = savedReports.slice();
   // Apply global filter state
@@ -1427,79 +1475,10 @@ function visibleReports() {
     rows = rows.filter(r => String(r.createdByDisplay || '').toLowerCase().includes(globalFilterState.owner.toLowerCase()));
   }
 
-  // Apply role-based visibility with strict routing
+  // Apply strict visibility
   if (!currentUser) return [];
-  const isAdmin = currentUser.role === 'admin';
-  const isExec = currentUser.role === 'exec_engineer';
-  const isQA = currentUser.role === 'qa_head';
-  const isContractor = currentUser.role === 'engineer';
-  const isManager = currentUser.role === 'manager';
-  const isConsultant = currentUser.role === 'consultant';
-
-  // If admin, manager, consultant, or owner, they can see everything (owner sees own)
-  // For contractor, they only see their own RFIs and linked items.
-  // For exec and QA, apply routing rules.
-
-  rows = rows.filter(r => {
-    // Owner can always see own records
-    if (r.createdBy === currentUser.username) return true;
-    // Admin, manager, consultant can see all
-    if (isAdmin || isManager || isConsultant) return true;
-    // For RFIs, apply routing
-    if (r.templateKey === 'rfi') {
-      const routing = r.meta?.routing || 'Execution Engineer → QA Head';
-      if (routing === 'Direct to QA Head') {
-        // Only QA Head (and admin/owner already handled) can see
-        return isQA;
-      } else if (routing === 'Execution Engineer → QA Head') {
-        // Only Execution Engineer can see until it's approved by Exec
-        if (isExec) return true;
-        // QA Head can see only after Exec has approved (status Approved by Execution)
-        if (isQA && r.status === 'Approved by Execution') return true;
-        return false;
-      } else if (routing === 'Both') {
-        // Both QA Head and Exec can see
-        return isQA || isExec;
-      }
-      return false;
-    }
-    // For non-RFI records (checklists, NCRs), we need to check if they are linked to an RFI that the user can see
-    // For simplicity, we allow owner and admin/manager/consultant to see all non-RFI.
-    // For exec/QA, we'll allow if they can see the linked RFI or if they are the owner.
-    // For now, we'll allow all non-RFI to be seen by exec/QA if they are not private.
-    // Actually we want to hide checklists and NCRs if their linked RFI is hidden.
-    const linkedRfi = r.meta?.linkedRfi || r.raisedFromRfi || '';
-    if (linkedRfi) {
-      const parentRfi = savedReports.find(sr => sr.templateKey === 'rfi' && (sr.meta?.rfiNo === linkedRfi || sr.id === linkedRfi));
-      if (parentRfi) {
-        // Check if current user can see the parent RFI
-        const canSeeParent = visibleReportsForUser(parentRfi, currentUser);
-        return canSeeParent;
-      }
-    }
-    // If no linked RFI, allow if owner or admin/manager/consultant
-    return isAdmin || isManager || isConsultant || r.createdBy === currentUser.username;
-  });
-
+  rows = rows.filter(r => canUserSeeRecord(r, currentUser));
   return rows;
-}
-
-// Helper: check if a single RFI is visible to current user
-function visibleReportsForUser(rfi, user) {
-  if (!rfi || rfi.templateKey !== 'rfi') return false;
-  if (rfi.createdBy === user.username) return true;
-  if (user.role === 'admin' || user.role === 'manager' || user.role === 'consultant') return true;
-  const routing = rfi.meta?.routing || 'Execution Engineer → QA Head';
-  if (routing === 'Direct to QA Head') {
-    return user.role === 'qa_head';
-  } else if (routing === 'Execution Engineer → QA Head') {
-    if (user.role === 'exec_engineer') return true;
-    if (user.role === 'qa_head' && rfi.status === 'Approved by Execution') return true;
-    return false;
-  } else if (routing === 'Both') {
-    return user.role === 'qa_head' || user.role === 'exec_engineer';
-  }
-  return false;
 }
 
 function updateAdminToolsVisibility() {
@@ -2408,8 +2387,27 @@ function openRecord(id) {
         return;
       }
     } else {
-      toast('⛔ Access denied');
-      return;
+      // For non-RFI records, check if they are linked to a visible RFI
+      const linkedRfiId = r.raisedFromRfi || r.meta?.raisedFromRfi || r.meta?.linkedRfi || '';
+      if (linkedRfiId) {
+        const parentRfi = savedReports.find(pr => pr.templateKey === 'rfi' && (pr.id === linkedRfiId || pr.meta?.rfiNo === linkedRfiId));
+        if (parentRfi) {
+          // If the parent RFI is visible to the user, allow opening this record
+          if (!canUserSeeRecord(parentRfi, currentUser)) {
+            toast('⛔ Access denied');
+            return;
+          }
+        } else {
+          toast('⛔ Access denied');
+          return;
+        }
+      } else {
+        // If not linked, only allow if owner or admin/manager/consultant
+        if (!['admin', 'manager', 'consultant'].includes(currentUser.role)) {
+          toast('⛔ Access denied');
+          return;
+        }
+      }
     }
   }
   openTemplate(r.templateKey, r.id);
