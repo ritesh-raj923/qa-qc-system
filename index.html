@@ -651,6 +651,12 @@ header .sub { font-size: 13px; color: #555; }
       <div id="relatedChecklistList" class="small">No linked checklist yet.</div>
     </div>
 
+    <!-- NEW: Linked NCRs Panel -->
+    <div id="relatedNCRPanel" class="panel" style="margin-bottom:12px;">
+      <div style="font-size:16px;font-weight:700;color:var(--blue);margin-bottom:6px;">📋 Linked NCRs</div>
+      <div id="relatedNCRList" class="small">No linked NCR yet.</div>
+    </div>
+
     <form id="recordForm" onsubmit="saveReport(event)">
       <div class="sheet-shell">
         <div class="sheet-head">
@@ -1791,6 +1797,57 @@ function renderSheet(t, report) {
     radios.forEach(r => r.checked = (r.value === routingVal));
   }
   updateProgress();
+  // After rendering, update linked NCRs if this is an RFI
+  if (activeTemplateKey === 'rfi') {
+    renderLinkedNCRs();
+  }
+}
+
+// ============================================
+// RENDER LINKED NCRs (new function)
+// ============================================
+function renderLinkedNCRs() {
+  const list = document.getElementById('relatedNCRList');
+  if (!list) return;
+  if (activeTemplateKey !== 'rfi') {
+    list.innerHTML = '';
+    return;
+  }
+  // Get the current RFI's identifier
+  const rfiNo = document.getElementById('meta_rfiNo')?.value || '';
+  const rfiId = activeReportId || '';
+  // Find linked NCRs using both rfiNo and rfiId
+  let linked = [];
+  if (rfiNo) linked = getLinkedNCRsForRfi(rfiNo);
+  if (rfiId && rfiId !== rfiNo) {
+    const extra = getLinkedNCRsForRfi(rfiId);
+    linked = linked.concat(extra);
+  }
+  // Remove duplicates by id
+  const seen = new Set();
+  linked = linked.filter(n => {
+    if (seen.has(n.id)) return false;
+    seen.add(n.id);
+    return true;
+  });
+
+  if (!linked.length) {
+    list.innerHTML = 'No linked NCR yet.';
+    return;
+  }
+
+  let html = '<ul style="list-style:none;padding:0;margin:0;">';
+  linked.forEach(n => {
+    const status = n.status || 'Draft';
+    const canEdit = canEditNCR(n);
+    const editBtn = canEdit ? `<button class="btn btn-secondary" style="padding:4px 8px;font-size:11px;margin-left:6px;" onclick="openRecord('${n.id}')">Open & Edit</button>` : `<button class="btn btn-secondary" style="padding:4px 8px;font-size:11px;margin-left:6px;" onclick="openRecord('${n.id}')">View</button>`;
+    html += `<li style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid #eee;">
+      <span><b>${esc(n.meta?.ncrNo || n.id)}</b> – ${esc(status)}</span>
+      ${editBtn}
+    </li>`;
+  });
+  html += '</ul>';
+  list.innerHTML = html;
 }
 
 // ============================================
@@ -1938,6 +1995,35 @@ function getAuditNow(action, comment) {
 
 function currentRecord() { return activeReportId ? savedReports.find(r => r.id === activeReportId) : null; }
 
+// ============================================
+// ENHANCED canEditNCR to check parent RFI ownership
+// ============================================
+function canEditNCR(rec) {
+  if (!rec) return false;
+  const status = rec.status || 'Draft';
+  const isContractor = currentUser?.role === 'engineer';
+  const isQAExec = currentUser?.role === 'qa_head' || currentUser?.role === 'exec_engineer' || currentUser?.role === 'admin';
+  if (status === 'Closed' || status === 'Approved') return false;
+  if (isContractor) {
+    // Check if this NCR is linked to an RFI owned by this contractor
+    const linkedRfiId = rec.raisedFromRfi || rec.meta?.raisedFromRfi || '';
+    if (linkedRfiId) {
+      const parentRfi = savedReports.find(r => r.templateKey === 'rfi' && (r.id === linkedRfiId || r.meta?.rfiNo === linkedRfiId));
+      if (parentRfi && parentRfi.createdBy === currentUser.username) {
+        // Contractor owns the parent RFI, so they can edit if status is Open or Rejected
+        return (status === 'Open' || status === 'Rejected');
+      }
+    }
+    // If not linked to their RFI, they cannot edit
+    return false;
+  }
+  if (isQAExec) {
+    // QA/Exec can edit if status is Draft or Under Review
+    return (status === 'Draft' || status === 'Under Review');
+  }
+  return false;
+}
+
 function saveReport(ev) {
   ev.preventDefault();
   const t = templates[activeTemplateKey];
@@ -1976,6 +2062,12 @@ function saveReport(ev) {
   row.score = (yes + no) ? Math.round((yes / (yes + no)) * 100) : 100;
   row.defectsCount = no;
 
+  // For NCR, check if editable
+  if (activeTemplateKey === 'ncr' && !canEditNCR(row)) {
+    toast('⛔ You cannot edit this NCR in its current state');
+    return;
+  }
+
   if (activeTemplateKey !== 'rfi' && activeTemplateKey !== 'ncr' && activeTemplateKey !== 'imir' && !row.meta.linkedRfi) {
     toast('⚠️ Please select Linked RFI No before saving checklist');
     return;
@@ -1990,6 +2082,8 @@ function saveReport(ev) {
     pendingReturnRfiId = id;
     pendingLinkedRfiNo = row.meta?.rfiNo || pendingLinkedRfiNo;
     pendingParentMeta = { project: meta.project, package: meta.package, contractor: meta.contractor, projectCode: meta.projectCode, date: meta.date };
+    // Re-render linked NCRs for this RFI
+    renderLinkedNCRs();
   }
   updateWorkflowButtons(row);
   setChecklistButtonsState(activeTemplateKey === 'rfi' ? row : null);
@@ -2019,29 +2113,44 @@ function updateWorkflowButtons(rec) {
   const isExec = isExecEngineer();
   const isAdmin = currentUser?.role === 'admin';
   const isQA = canApprove();
+  const isContractor = currentUser?.role === 'engineer';
 
+  // For NCR, we need different button logic based on canEditNCR
+  if (isNcr) {
+    const editable = canEditNCR(rec);
+    const showContractorSubmit = isContractor && editable && (status === 'Open' || status === 'Rejected');
+    const showQASend = (isQA || isExec) && (status === 'Draft');
+    const showApprove = (isQA || isExec) && (status === 'Under Review');
+    const showReject = (isQA || isExec) && (status === 'Under Review');
+    const showClose = (isQA || isExec) && (status === 'Approved' || status === 'Approved with Comment');
+
+    document.getElementById('btnSubmit').classList.toggle('hidden', !showQASend);
+    document.getElementById('btnReview').classList.toggle('hidden', !showContractorSubmit);
+    document.getElementById('btnApprove').classList.toggle('hidden', !showApprove);
+    document.getElementById('btnReject').classList.toggle('hidden', !showReject);
+    document.getElementById('btnClose').classList.toggle('hidden', !showClose);
+    document.getElementById('btnApproveComment').classList.toggle('hidden', true);
+    document.getElementById('btnApproveQA').classList.toggle('hidden', true);
+    document.getElementById('btnRaiseNCR').classList.toggle('hidden', true);
+    return;
+  }
+
+  // RFI and IMIR workflow (unchanged)
   // Submit: only contractor or admin (not exec_engineer)
   const showSubmit = currentUser && (currentUser.role === 'engineer' || isAdmin) && (!rec || ['Draft', 'Rejected'].includes(status));
   const showReview = isQA && status === 'Submitted';
-  // Approve for QA: only Exec, and only if not Direct (i.e., Execution → QA Head or Both)
   const showApproveQA = isExec && status === 'Submitted' && !isDirect;
-  // Approve: 
-  // - If Direct: only QA can approve from Submitted
-  // - If Execution → QA: QA can approve from Approved by Execution
-  // - If Both: QA can approve from Submitted (direct) OR from Approved by Execution (if Exec acted first)
   const showApprove = (isQA && (
     (isDirect && status === 'Submitted') ||
     (isBoth && (status === 'Submitted' || status === 'Approved by Execution')) ||
     (!isDirect && !isBoth && status === 'Approved by Execution')
-  )) || (isExec && !isDirect && status === 'Submitted' && !isBoth); // Exec can approve only in Execution → QA path, not Both (but we allow Both to also let Exec approve for QA? Actually in Both, Exec can also approve for QA, so we handle that above with showApproveQA)
-  // Reject: similar to approve, but both QA and Exec can reject in Both mode
+  )) || (isExec && !isDirect && status === 'Submitted' && !isBoth);
   const showReject = (isQA && (
     (isDirect && status === 'Submitted') ||
     (isBoth && (status === 'Submitted' || status === 'Approved by Execution')) ||
     (!isDirect && !isBoth && status === 'Approved by Execution')
   )) || (isExec && (status === 'Submitted' || (isBoth && status === 'Approved by Execution')));
-  // Close: QA or Exec can close NCR
-  const showClose = (isQA || isExec) && isNcr && ['Submitted', 'Under Review', 'Approved', 'Approved with Comment'].includes(status);
+  const showClose = false;
 
   const btnRaiseNCR = document.getElementById('btnRaiseNCR');
   if (btnRaiseNCR) {
@@ -2054,7 +2163,7 @@ function updateWorkflowButtons(rec) {
   document.getElementById('btnApprove').classList.toggle('hidden', !showApprove);
   document.getElementById('btnApproveComment').classList.toggle('hidden', !(showApprove && isRfi));
   document.getElementById('btnReject').classList.toggle('hidden', !showReject);
-  document.getElementById('btnClose').classList.toggle('hidden', !showClose);
+  document.getElementById('btnClose').classList.toggle('hidden', showClose);
 }
 
 function setChecklistButtonsState(rec) {
@@ -2199,6 +2308,35 @@ function submitRecord() {
 function markUnderReview() {
   const rec = currentRecord();
   if (!rec) { toast('⚠️ Open record first'); return; }
+
+  if (rec.templateKey === 'ncr') {
+    // For NCR, only contractor can mark Under Review (submit response)
+    if (currentUser?.role !== 'engineer') {
+      toast('⛔ Only contractor can submit NCR response');
+      return;
+    }
+    if (rec.status !== 'Open' && rec.status !== 'Rejected') {
+      toast('⚠️ Cannot submit this NCR');
+      return;
+    }
+    rec.status = 'Under Review';
+    rec.comment = document.getElementById('wfComment').value.trim() || 'Contractor submitted response for review';
+    rec.savedAt = new Date().toISOString();
+    rec.audit.push(getAuditNow('Submitted by Contractor', rec.comment));
+    persistDb();
+    updateWorkflowButtons(rec);
+    toast('📩 Response submitted for review');
+
+    // Notify QA Head and Exec Engineer
+    const qaHeadUser = users.find(u => u.role === 'qa_head');
+    const execUser = users.find(u => u.role === 'exec_engineer');
+    const docNo = rec.meta?.ncrNo || rec.id || 'Unknown';
+    if (qaHeadUser) sendNotification(qaHeadUser.u, `NCR #${docNo} response submitted by Contractor for review`, 'ncr_submitted', rec.id, docNo, currentUser.display);
+    if (execUser) sendNotification(execUser.u, `NCR #${docNo} response submitted by Contractor for review`, 'ncr_submitted', rec.id, docNo, currentUser.display);
+    return;
+  }
+
+  // For RFI
   rec.status = 'Under Review';
   rec.comment = document.getElementById('wfComment').value.trim();
   rec.audit.push(getAuditNow('Marked Under Review', rec.comment));
@@ -2214,6 +2352,29 @@ function markUnderReview() {
 function approveRecord() {
   const rec = currentRecord();
   if (!rec) { toast('⚠️ Open record first'); return; }
+
+  if (rec.templateKey === 'ncr') {
+    if (!(canApprove() || isExecEngineer())) { toast('⛔ Only QA/Exec can approve NCR'); return; }
+    if (rec.status !== 'Under Review') { toast('⚠️ Cannot approve now'); return; }
+    rec.status = 'Approved';
+    rec.comment = document.getElementById('wfComment').value.trim() || 'NCR Approved';
+    rec.decisionBy = currentUser.username;
+    rec.decisionByDisplay = currentUser.display;
+    rec.savedAt = new Date().toISOString();
+    rec.audit.push(getAuditNow('Approved', rec.comment));
+    persistDb();
+    updateWorkflowButtons(rec);
+    toast('✅ NCR Approved');
+    // Notify contractor
+    const contractorUser = users.find(u => u.username === rec.createdBy);
+    if (contractorUser) {
+      const docNo = rec.meta?.ncrNo || rec.id || 'Unknown';
+      sendNotification(contractorUser.u, `NCR #${docNo} has been Approved by ${currentUser.display}`, 'approved', rec.id, docNo, currentUser.display);
+    }
+    return;
+  }
+
+  // For RFI
   rec.status = 'Approved';
   rec.comment = document.getElementById('wfComment').value.trim();
   rec.decisionBy = currentUser.username;
@@ -2250,6 +2411,30 @@ function approveWithCommentRecord() {
 function rejectRecord() {
   const rec = currentRecord();
   if (!rec) { toast('⚠️ Open record first'); return; }
+
+  if (rec.templateKey === 'ncr') {
+    if (!(canApprove() || isExecEngineer())) { toast('⛔ Only QA/Exec can reject NCR'); return; }
+    if (rec.status !== 'Under Review') { toast('⚠️ Cannot reject now'); return; }
+    const c = document.getElementById('wfComment').value.trim();
+    if (!c) { toast('⚠️ Enter rejection/return comment'); return; }
+    rec.status = 'Rejected';
+    rec.comment = 'Returned for rework: ' + c;
+    rec.decisionBy = currentUser.username;
+    rec.decisionByDisplay = currentUser.display;
+    rec.savedAt = new Date().toISOString();
+    rec.audit.push(getAuditNow('Returned to Contractor', rec.comment));
+    persistDb();
+    updateWorkflowButtons(rec);
+    toast('↩️ NCR returned to contractor');
+    // Notify contractor
+    const contractorUser = users.find(u => u.username === rec.createdBy);
+    if (contractorUser) {
+      const docNo = rec.meta?.ncrNo || rec.id || 'Unknown';
+      sendNotification(contractorUser.u, `NCR #${docNo} returned for rework by ${currentUser.display}. Comment: ${c}`, 'rejected', rec.id, docNo, currentUser.display);
+    }
+    return;
+  }
+
   const c = document.getElementById('wfComment').value.trim();
   if (!c) { toast('⚠️ Enter rejection comment'); return; }
   rec.status = 'Rejected';
@@ -2269,21 +2454,19 @@ function rejectRecord() {
 function closeRecord() {
   const rec = currentRecord();
   if (!rec) { toast('⚠️ Open record first'); return; }
-  // Allow Exec, QA, Admin to close NCR
-  if (!(isExecEngineer() || canApprove())) {
-    toast('⛔ Only Execution Engineer, QA Head or Admin can close NCR');
+  if (rec.templateKey === 'ncr') {
+    if (!(canApprove() || isExecEngineer())) { toast('⛔ Only QA/Exec can close NCR'); return; }
+    if (rec.status !== 'Approved' && rec.status !== 'Approved with Comment') { toast('⚠️ Only Approved NCR can be closed'); return; }
+    rec.status = 'Closed';
+    rec.comment = document.getElementById('wfComment').value.trim() || 'Closed';
+    rec.audit.push(getAuditNow('Closed', rec.comment));
+    rec.savedAt = new Date().toISOString();
+    persistDb();
+    updateWorkflowButtons(rec);
+    toast('🔒 NCR Closed');
     return;
   }
-  rec.status = 'Closed';
-  rec.comment = document.getElementById('wfComment').value.trim();
-  rec.audit.push(getAuditNow('Closed', rec.comment));
-  rec.savedAt = new Date().toISOString();
-  persistDb(); updateWorkflowButtons(rec);
-  toast('🔒 Closed');
-  if (rec.createdBy && rec.templateKey === 'ncr') {
-    const docNo = rec.meta?.ncrNo || rec.id || 'Unknown';
-    sendNotification(rec.createdBy, `Your NCR #${docNo} has been Closed by ${currentUser.display}`, 'closed_ncr', rec.id, docNo, currentUser.display);
-  }
+  toast('⚠️ Not applicable');
 }
 
 // ============================================
